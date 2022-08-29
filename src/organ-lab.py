@@ -1,20 +1,25 @@
 from pyo import *
 import numpy as np
+
 s = Server()
 s.setMidiInputDevice(99)
 s.boot()
 
-note = Notein(poly=10, scale=0, first=0, last=127)
+note = Notein(poly=10, scale=0, first=0, last=127, channel=0, mul=1)
+
 note.keyboard()
 
-tfon = TrigFunc(note["trigon"], noteon, arg=list(range(10)))
-adsr = MidiAdsr(note['velocity'], attack=0.01, decay=0, sustain=1, release=0.01)
+freq = MToF(note["pitch"])
 
 amps = Port(note["velocity"], risetime=0.005, falltime=0.5, mul=0.1)
+
+#tfon = TrigFunc(note["trigon"], noteon, arg=list(range(10)))
+#adsr = MidiAdsr(note['velocity'], attack=0.01, decay=0, sustain=1, release=0.01)
+
 #partials = [0.5, 1.5, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 8.0]
 #freqlist = [Sig(notes["pitch"]*i) for i in range(4)] # signals wih values 100, 150, etc. and the LFO added 
 partials = list(range(1, 8, 1))
-freq = MToF(note["pitch"])
+
 pitch = [(partial * freq) for partial in partials]
 print(pitch)
 #lfMul = [(1/i)*10 for i in freq]
