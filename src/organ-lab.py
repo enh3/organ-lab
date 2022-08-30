@@ -1,59 +1,49 @@
 from pyo import *
 import numpy as np
 
-# These functions are called when Notein receives a MIDI note event.
-def noteon(voice):
-    "Print pitch and velocity for noteon event."
-    pit = int(note["pitch"].get(all=True)[voice])
-    vel = int(note["velocity"].get(all=True)[voice] * 127)
-    print("Noteon: voice = %d, pitch = %d, velocity = %d" % (voice, pit, vel))
-
-
-def noteoff(voice):
-    "Print pitch and velocity for noteoff event."
-    pit = int(note["pitch"].get(all=True)[voice])
-    vel = int(note["velocity"].get(all=True)[voice] * 127)
-    print("Noteoff: voice = %d, pitch = %d, velocity = %d" % (voice, pit, vel))
-    
-
-
 s = Server()
 s.setMidiInputDevice(99)
 s.boot()
 partials = list(range(1, 8, 1))
-mul = [(0.5**i)*0.25 for i in range(7)]#numpy.logspace(0.5, 0.0000025, 4) 
+mul = [(0.4**i)*0.0625 for i in range(7)]
 note = Notein(poly=10, scale=0, first=0, last=127, channel=0, mul=1)
 
 note.keyboard()
 
-tfon = TrigFunc(note["trigon"], noteon, arg=list(range(10)))
-adsr = MidiAdsr(note['velocity'], attack=0.001, decay=0.1, sustain=0.7, release=0.5)
+env = MidiAdsr(note['velocity'], attack=0.003, decay=0.1, sustain=0.7, release=0.5)
+noiseEnv = MidiAdsr(note['velocity'], attack=0.001, decay=0.01, sustain=0.1, release=0.1)
+
+fEnv = LinTable([(0,15000), (100,10000)])
+
+def fEnvDef():
+    print('trig')
+    fEnv.play()
 
 freq = MToF(note["pitch"])
+pitch = note['pitch']
+trig = Change(freq)
+TrigFunc(trig, fEnvDef)
+
+
+pitchTest = note['pitch']
+trig = Change(pitchTest)
+filtEnv = TrigEnv(trig, table=fEnv, dur=5)
+pp = Print(filtEnv, interval=0.001, message="Audio stream value")
+
 
 amps = Port(note["velocity"], risetime=0.005, falltime=0.5, mul=0.1)
 
-#tfon = TrigFunc(note["trigon"], noteon, arg=list(range(10)))
-#adsr = MidiAdsr(note['velocity'], attack=0.01, decay=0, sustain=1, release=0.01)
-
-#freqlist = [Sig(notes["pitch"]*i) for i in range(4)] # signals wih values 100, 150, etc. and the LFO added 
-
-
-
 pitch = [(partial * freq) for partial in partials]
-print(pitch)
+
 #lfMul = [(1/i)*10 for i in freq]
 #lf = Sine(0.5, mul=lfMul)
 
-sound = [Sine(freq=pit, mul=amp * adsr) for pit, amp in zip(pitch, mul)]
-#a = Sine(freq=freq, mul=amps)
-SL = Mix(sound, 1).out()
-SR = Mix(sound, 1).out(1)
+sound = [Sine(freq=pit+Randi(-2.0, 2.0, 5), mul=amp*env) + BrownNoise(0.02) * noiseEnv for pit, amp in zip(pitch, mul)]
+sound = STRev(Mix(sound, 1), inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
+sound = ButLP(sound, filtEnv)
 
-# TrigFunc calls a function when it receives a trigger. Because notes["trigon"]
-# contains 10 streams, there will be 10 caller, each one with its own argument,
-# taken from the list of integers given at `arg` argument.
-tfon = TrigFunc(note["trigon"], noteon, arg=list(range(10)))
-tfoff = TrigFunc(note["trigoff"], noteoff, arg=list(range(10)))
+SL = sound.out()
+SR = sound.out(1)
 
+s.start()
 s.gui(locals())
