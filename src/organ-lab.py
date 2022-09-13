@@ -27,14 +27,13 @@ t.graph()
 freq = MToF(note['pitch'])
 pitch = [(partial * freq) for partial in partialsInit]
 
-noise = PinkNoise(5) * noiseEnv
+noise = PinkNoise(25) * noiseEnv
 noise = Reson(noise, freq=(freq*(20/4)), q=10)
 
 partEnvs = [p1Env, p2Env, p3Env, p4Env]
 
 sound = [Osc(t, freq=pit+Randi(-randDev, randDev, 5), mul=amp*env) for pit, amp in zip(pitch, mul)]
-
-sound = STRev(Mix(sound, 1) + noise, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
+sound = STRev(Mix(sound, 1) + noise, inpos=0.5, revtime=1, cutoff=4000, bal=0.15)
 sound = ButLP(sound, freq=1650)
 
 
@@ -43,7 +42,7 @@ env.ctrl(title="Harmonics Envelope")
 noiseEnv.ctrl(title="Noise Envelope")
 
 def new():
-    randDev.value = Adsr(attack=30, release=10, mul=28, add=2).play()
+    randDev.value = Adsr(attack=240, release=10, mul=1000).play()
     
 """
 < 30:
@@ -53,9 +52,9 @@ def new():
     return(randDev)
 """
 
-randDevEnv = Pattern(new, 30).play()
+randDevEnv = Pattern(new, 120).play()
 
-#pp = Print(randDev, interval=0.1, message="Audio stream value")
+pp = Print(randDev, interval=0.1, message="Audio stream value")
 
 SL = sound.out()
 SR = sound.out(1)
@@ -63,6 +62,7 @@ SR = sound.out(1)
 print(randDev)
 
 s.noteout(pitch=1, velocity=20)
+s.amp = 0.03
 
 s.start()
 s.gui(locals())
