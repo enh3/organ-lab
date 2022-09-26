@@ -8,9 +8,9 @@ randDev = Sig(1)
 trans = Sig(1)
 
 p1Mul = Sig(1)
-p2Mul = Sig(0.2)
-p3Mul = Sig(0.5)
-p4Mul = Sig(0.01)
+p2Mul = Sig(1)
+p3Mul = Sig(1)
+p4Mul = Sig(1)
 
 note = Notein(poly=10, scale=0, first=0, last=127, channel=0, mul=1)
 note.keyboard()
@@ -36,10 +36,10 @@ sound = STRev(Mix(p1+p2+p3+p4+noise, 1), inpos=0.5, revtime=5, cutoff=4000, bal=
 SL = Mix(sound, 1).out()
 SR = Mix(sound, 1).out(1)
 
-p1Mul.ctrl(title="p1Mul")
-p2Mul.ctrl(title="p2Mul")
-p3Mul.ctrl(title="p3Mul")
-p4Mul.ctrl(title="p4Mul")
+#p1Mul.ctrl(title="p1Mul")
+#p2Mul.ctrl(title="p2Mul")
+#p3Mul.ctrl(title="p3Mul")
+#p4Mul.ctrl(title="p4Mul")
 p1Env.ctrl(title="p1Env")
 p2Env.ctrl(title="p2Env")
 p3Env.ctrl(title="p3Env")
@@ -47,10 +47,26 @@ p4Env.ctrl(title="p4Env")
 noise.ctrl(title="Noise")
 noiseEnv.ctrl(title="Noise Envelope")
 
-def new():
+def trans():
     trans.value = Adsr(attack=240, release=10, mul=1000).play()
+    
+testSig = Sig(1)
 
-transEnv = Pattern(new, 120).play()
+def test():
+    testSig.value = Fader(fadein=2, fadeout=2, dur=4).range(0, 0.4).play()
+    
+testP = Pattern(test, 10).play()
+    
+def bToD():
+    p1Mul.value = Fader(fadein=2, fadeout=2, dur=4).range(1, 0.635).play()#.635
+    p2Mul.value = Fader(fadein=2, fadeout=2, dur=4, mul=1, add=0).range(0.2, 0.823).play()#.723
+    p3Mul.value = Fader(fadein=2, fadeout=2, dur=4).range(0.3, 0.515).play()#.515
+    p4Mul.value = Fader(fadein=2, fadeout=2, dur=4).range(0.01, 0.535).play()#.535
+
+#transEnv = Pattern(trans, 120).play()
+bourdToDiap = Pattern(bToD, 4).play()
+
+pp = Print(testSig, interval=0.1, message="Audio stream value")
 
 s.amp = 0.3
 
