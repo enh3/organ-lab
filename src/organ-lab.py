@@ -5,7 +5,7 @@ s.setMidiInputDevice(99)
 s.boot()
 
 randDev = Sig(1)
-transV = Sig(1)
+transV = Sig(0)
 
 p1Mul = Sig(1)
 p2Mul = Sig(0.2)
@@ -47,12 +47,12 @@ p4Env.ctrl(title="p4Env")
 noise.ctrl(title="Noise")
 noiseEnv.ctrl(title="Noise Envelope")
 
-
+'''
 def trans():
     transV.value = Adsr(attack=240, release=10, mul=1000).play()
 
 transEnv = Pattern(trans, 120).play()
-
+'''
 #Fader se comporte pas comme attendu avec le méthode .range, donnant 0.5 à 1 pour .range(0, 1) par example
 '''  
 def bToD():
