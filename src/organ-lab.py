@@ -1,72 +1,124 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Possibilité de jouer avec la pédale de sustain avec polyphonie réglable
+Script de 'belangeo' et modifié par mes soins, afin de gérer différement
+le relachement de la pédale. Dans sa première version, 'belangeo' supprime
+toutes les notes au relachement de la pédale. Dans cette version, on conserve
+les notes encore enfoncés et on ne supprime que les touches déjà relachéés.
+Source : https://groups.google.com/forum/#!searchin/pyo-discuss/sustain$20pedal%7Csort:date/pyo-discuss/LKd-mbiC6oo/lL_GsHM8DwAJ
+"""
 from pyo import *
 
-s = Server()
-s.setMidiInputDevice(99)
-s.boot()
+class NoteinSustain:
+    """
+    Classe similaire à l'objet Notein mais avec l'intégration de la pédale.
+    La pédale de sustain est affectée au Control Change 64.
+    """
+    def __init__(self, poly=16, scale=0, first=0, last=127, channel=0):
+        # la pédale est relevée
+        self.sustain = False
 
-randDev = Sig(1)
-transV = Sig(0)
+        # dictionnaire des notes qui sont actuellement enfoncés
+        self.notedict = {}
 
-p1Mul = Sig(1)
-p2Mul = Sig(0.2)
-p3Mul = Sig(0.5)
-p4Mul = Sig(0.01)
+        # polyphonie : nombre de notes pouvants être gérées
+        self.poly = poly
 
-note = Notein(poly=10, scale=0, first=0, last=127, channel=0, mul=1)
-note.keyboard()
+        # initialise le NoteIn pour récupérer les messages de notes
+        self.notes = Notein(poly, scale, first, last, channel)
+        self.noteon = TrigFunc(self.notes["trigon"], self.onNoteon, list(range(poly)))
+        self.noteoff = TrigFunc(self.notes["trigoff"], self.onNoteoff, list(range(poly)))
 
-p1Env = MidiAdsr(note['velocity'], attack=0.1, decay=0.02, sustain=0.3, release=0.1, mul=p1Mul)
-p2Env = MidiAdsr(note['velocity'], attack=0.25, decay=0.04, sustain=0.2, release=0.1, mul=p2Mul)
-p3Env = MidiAdsr(note['velocity'], attack=0.05, decay=0.01, sustain=0.1, release=0.1, mul=p3Mul)
-p4Env = MidiAdsr(note['velocity'], attack=0.07, decay=0.008, sustain=0.05, release=0.1, mul=p4Mul)
+        # Met la pédale à vrai ou faux en fonction du CC64
+        self.sustain = Midictl(64, channel=channel)
+        self.suscall = TrigFunc(Change(self.sustain), self.onSustain)
 
-noiseEnv = MidiAdsr(note['velocity'], attack=0.001, decay=0.146, sustain=0.07, release=0.1)
+        # Crée les flux de vélocité et de pitch en fonction de la polyphonie
+        self.velocity = Sig([0]*poly)
+        self.pitch = Sig([0]*poly)
 
-freq = MToF(note['pitch'])
+    def onNoteon(self, which):
+        """
+        Fonction appelée lorsque qu'une touche est enfoncée
+        """
+        amp = self.notes.get("velocity", True)[which]
+        pitch = self.notes.get("pitch", True)[which]
+        voice = self._get_free_voice()
+        if voice != None:
+            self.notedict[voice] = pitch
+            self.pitch[voice].value = pitch
+            self.velocity[voice].value = amp
 
-noise = PinkNoise(0.7) * noiseEnv
-noise = Reson(noise, freq=(freq*(20/4)), q=10)
+    def onNoteoff(self, voice):
+        """
+        Fonction appelée lorsque qu'une touche est relaché
+        """
+        pitch = self.notes.get("pitch", True)[voice]
 
-p1 = Sine(freq=freq+Randi(-randDev, randDev, 5)+transV, mul=p1Env)
-p2= Sine(freq=(freq*2)+Randi(-randDev, randDev, 5)+transV, mul=p2Env)
-p3 = Sine(freq=(freq*3)+Randi(-randDev, randDev, 5)+transV, mul=p3Env)
-p4 = Sine(freq=(freq*4)+Randi(-randDev, randDev, 5)-transV, mul=p4Env)
+        # récupère la voix correspondant à la hauteur de la note
+        voice = self._get_voice_from_pitch(pitch)
 
-sound = STRev(Mix(p1+p2+p3+p4+noise, 1), inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
-SL = Mix(sound, 1).out()
-SR = Mix(sound, 1).out(1)
+        # si une voix a été trouvée en correspondance au pitch
+        if voice != None:
+            # Si la pédale n'est pas enfoncé
+            if not self.sustain.get():
+                self.velocity[voice].value = 0.0
+                # libére la note
+                del self.notedict[voice]
+            else:
+                # la note est encoré joué, mais la touche n'est plus enfoncée
+                self.notedict[voice] = -1
 
-p1Mul.ctrl(title="p1Mul")
-p2Mul.ctrl(title="p2Mul")
-p3Mul.ctrl(title="p3Mul")
-p4Mul.ctrl(title="p4Mul")
-p1Env.ctrl(title="p1Env")
-p2Env.ctrl(title="p2Env")
-p3Env.ctrl(title="p3Env")
-p4Env.ctrl(title="p4Env")
-noise.ctrl(title="Noise")
-noiseEnv.ctrl(title="Noise Envelope")
-
-'''
-def trans():
-    transV.value = Adsr(attack=240, release=10, mul=1000).play()
-
-transEnv = Pattern(trans, 120).play()
-'''
-#Fader se comporte pas comme attendu avec le méthode .range, donnant 0.5 à 1 pour .range(0, 1) par example
-'''  
-def bToD():
-    p1Mul.value = Fader(fadein=2, fadeout=2, dur=4).range(1, 0.635).play()#.635
-    p2Mul.value = Fader(fadein=2, fadeout=2, dur=4, mul=1, add=0).range(0.2, 0.823).play()#.723
-    p3Mul.value = Fader(fadein=2, fadeout=2, dur=4).range(0.3, 0.515).play()#.515
-    p4Mul.value = Fader(fadein=2, fadeout=2, dur=4).range(0.01, 0.535).play()#.535
+    def onSustain(self):
+        """
+        Fonction appelée lorsque la pédale de sustain change d'étât
+        """
+        # si la pédale est relachée
+        if not self.sustain.get():
+            # il faut arrêter les notes qui ont déjà été rélachées == -1
+            notedict = dict(self.notedict)
+            for voice, pitch in notedict.items():
+                if pitch == -1:
+                    self.velocity[voice].value = 0.0
+                    del self.notedict[voice]
 
 
-bourdToDiap = Pattern(bToD, 4).play()
-'''
-pp = Print(transV, interval=0.1, message="Audio stream value")
+    def _get_free_voice(self):
+        """
+        Tente de trouver le premier index de libre dans le dictionnaire de notes
+        """
+        freevoice = None
+        for i in range(self.poly):
+            if not i in self.notedict:
+                freevoice = i
+                break
+        return freevoice
 
-s.amp = 0.3
+    def _get_voice_from_pitch(self, pitch):
+        """
+        Tente de trouver l'index correspondant au pitch dans le dictionnaire
+        de notes
+        """
+        voice = None
+        for key, val in self.notedict.items():
+            if val == pitch:
+                voice = key
+                break
+        return voice
 
-s.start()
-s.gui(locals())
+    def __getitem__(self, str):
+        if str == 'pitch':
+            return self.pitch
+        elif str == 'velocity':
+            return self.velocity
+        else:
+            print("NoteinSustain's key should be 'pitch' or 'velocity'!")
+
+
+if __name__ == '__main__':
+    s = Server()
+    print(pm_list_devices())
+    s.setMidiInputDevice(0)
+    s.boot().start()
+    s.gui(locals())
