@@ -1,12 +1,26 @@
 from pyo import *
 from s047_midi_sustain_and_polyphony import NoteinSustain
+import keyboard
 
 s = Server()
 s.setMidiInputDevice(99)
 s.boot()
 
+class Stop :
+    def __init__(self):
+        self
+
 randDev = Sig(1)
 transV = Sig(0)
+nPart = list(range(1, 4, 1))
+
+
+
+while True:
+    if keyboard.is_pressed("a"):
+        print("You pressed 'a'.")
+        break
+        
 
 p1Mul = Sig(0.588) #.588
 p2Mul = Sig(0.062) #.062
@@ -15,9 +29,9 @@ p4Mul = Sig(0.010) #.010
 p5Mul = Sig(0.092)# .092
 p6Mul = Sig(0.092)# .092
 
-note = NoteinSustain(scale=0)
-#note = Notein(poly=10, scale=0, first=0, last=127, channel=0, mul=1)
-#note.keyboard()
+#note = NoteinSustain(scale=0)
+note = Notein(poly=10, scale=0, first=0, last=127, channel=0, mul=1)
+note.keyboard()
 
 p1Env = MidiAdsr(note['velocity'], attack=0.181, decay=0.02, sustain=0.3, release=0.1, mul=p1Mul)
 p2Env = MidiAdsr(note['velocity'], attack=0.169, decay=0.04, sustain=0.2, release=0.1, mul=p2Mul)
@@ -26,21 +40,25 @@ p4Env = MidiAdsr(note['velocity'], attack=0.073, decay=0.008, sustain=0.05, rele
 p5Env = MidiAdsr(note['velocity'], attack=0.088, decay=0.008, sustain=0.05, release=0.1, mul=p5Mul)
 p6Env = MidiAdsr(note['velocity'], attack=0.088, decay=0.008, sustain=0.05, release=0.1, mul=p6Mul)
 
+pEnvs = [p1Env, p2Env, p3Env]
+
 noiseEnv = MidiAdsr(note['velocity'], attack=0.001, decay=0.146, sustain=0.70, release=0.1)
 
 freq = MToF(note['pitch'])
+freqs = MToF(note['pitch'])*nPart
+print(freqs)
 
 noise = PinkNoise(0.7) * noiseEnv
 noise = Reson(noise, freq=(freq*(20/4)), q=10, mul=.4)
 
-p1 = Sine(freq=freq+Randi(-randDev, randDev, 5)+transV, mul=p1Env)
-p2= Sine(freq=(freq*2)+Randi(-randDev, randDev, 5)+transV, mul=p2Env)
-p3 = Sine(freq=(freq*3)+Randi(-randDev, randDev, 5)+transV, mul=p3Env)
-p4 = Sine(freq=(freq*4)+Randi(-randDev, randDev, 5)-transV, mul=p4Env)
-p5 = Sine(freq=(freq*4)+Randi(-randDev, randDev, 5)-transV, mul=p5Env)
-p6 = Sine(freq=(freq*4)+Randi(-randDev, randDev, 5)-transV, mul=p6Env)
+p1 = Sine(freq=([100, 300, 500]), mul=p1Env).mix(1)
+#p2 = Sine(freq=(freq*2)+Randi(-randDev, randDev, 5)+transV, mul=p2Env)
+#p3 = Sine(freq=(freq*3)+Randi(-randDev, randDev, 5)+transV, mul=p3Env)
+#p4 = Sine(freq=(freq*4)+Randi(-randDev, randDev, 5)-transV, mul=p4Env)
+#p5 = Sine(freq=(freq*4)+Randi(-randDev, randDev, 5)-transV, mul=p5Env)
+#p6 = Sine(freq=(freq*4)+Randi(-randDev, randDev, 5)-transV, mul=p6Env)
 
-sound = STRev(Mix(p1+p2+p3+p4+p5+p6+noise, 1), inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
+sound = STRev(Mix(p1, 1), inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
 SL = Mix(sound, 1).out()
 SR = Mix(sound, 1).out(1)
 
