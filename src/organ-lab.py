@@ -22,11 +22,13 @@ class Stop :
         self.noiseEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=0.146, sustain=0.70, release=0.1)
         self.noise = PinkNoise(0.7) * self.noiseEnv
         self.noise = Reson(self.noise, freq=(self.freq*(20/4)), q=10, mul=.4)
+        self.noise = Mix(self.noise, 1)
         self.sound = [Sine(freq=pit, mul=amp*MidiAdsr(self.note['velocity'], attack=attacks, decay=0, sustain=1, release=releases)) for pit, amp, attacks, releases in zip(self.pitch, self.muls, self.attacks, self.releases)]
-        self.sound = STRev(Mix(self.sound, 1), inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
+        self.sound = Mix(self.sound, 1)
+        self.mix = STRev(self.sound+self.noise, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
     def out(self):
         "Sends the synth's signal to the audio output and return the object itself."
-        self.sound.out()
+        self.mix.out()
         return self
         
 #bourdon = Stop([1, 0.01, 0.5], [1, 1, 1], [0.1, 0.1, 0.1], [0.1, 0.1, 0.1], .1).out()
