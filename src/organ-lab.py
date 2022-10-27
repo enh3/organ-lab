@@ -6,62 +6,40 @@ s = Server()
 s.setMidiInputDevice(99)
 s.boot()
 
+#muls = [1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0]
+
 class Stop :
-    def __init__(self):
-        self
-
-randDev = Sig(1)
-transV = Sig(0)
-nPart = list(range(1, 4, 1))
-
-
-
-while True:
-    if keyboard.is_pressed("a"):
-        print("You pressed 'a'.")
-        break
+    def __init__(self, part, mul, att, rel, rand):
+        self.note = Notein(poly=10, scale=0, first=0, last=127, channel=0, mul=1)
+        self.note.keyboard()
+        self.partials = part
+        self.muls = mul
+        self.attacks = att
+        self.releases = rel
+        self.rand = rand
+        self.freq = MToF(self.note['pitch'])
+        self.pitch = [(partial * self.freq) for partial in self.partials]
+        self.noiseEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=0.146, sustain=0.70, release=0.1)
+        self.noise = PinkNoise(0.7) * self.noiseEnv
+        self.noise = Reson(self.noise, freq=(self.freq*(20/4)), q=10, mul=.4)
+        self.sound = [Sine(freq=pit, mul=amp*MidiAdsr(self.note['velocity'], attack=attacks, decay=0, sustain=1, release=releases)) for pit, amp, attacks, releases in zip(self.pitch, self.muls, self.attacks, self.releases)]
+        self.sound = STRev(Mix(self.sound, 1), inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
+    def out(self):
+        "Sends the synth's signal to the audio output and return the object itself."
+        self.sound.out()
+        return self
         
+#bourdon = Stop([1, 0.01, 0.5], [1, 1, 1], [0.1, 0.1, 0.1], [0.1, 0.1, 0.1], .1).out()
 
-p1Mul = Sig(0.588) #.588
-p2Mul = Sig(0.062) #.062
-p3Mul = Sig(0.412) #.412
-p4Mul = Sig(0.010) #.010
-p5Mul = Sig(0.092)# .092
-p6Mul = Sig(0.092)# .092
+bourdon = Stop([1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], .1).out()
 
 #note = NoteinSustain(scale=0)
-note = Notein(poly=10, scale=0, first=0, last=127, channel=0, mul=1)
-note.keyboard()
 
-p1Env = MidiAdsr(note['velocity'], attack=0.181, decay=0.02, sustain=0.3, release=0.1, mul=p1Mul)
-p2Env = MidiAdsr(note['velocity'], attack=0.169, decay=0.04, sustain=0.2, release=0.1, mul=p2Mul)
-p3Env = MidiAdsr(note['velocity'], attack=0.073, decay=0.01, sustain=0.1, release=0.1, mul=p3Mul)
-p4Env = MidiAdsr(note['velocity'], attack=0.073, decay=0.008, sustain=0.05, release=0.1, mul=p4Mul)
-p5Env = MidiAdsr(note['velocity'], attack=0.088, decay=0.008, sustain=0.05, release=0.1, mul=p5Mul)
-p6Env = MidiAdsr(note['velocity'], attack=0.088, decay=0.008, sustain=0.05, release=0.1, mul=p6Mul)
 
-pEnvs = [p1Env, p2Env, p3Env]
+#sound = STRev(Mix(p1, 1), inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
 
-noiseEnv = MidiAdsr(note['velocity'], attack=0.001, decay=0.146, sustain=0.70, release=0.1)
 
-freq = MToF(note['pitch'])
-freqs = MToF(note['pitch'])*nPart
-print(freqs)
-
-noise = PinkNoise(0.7) * noiseEnv
-noise = Reson(noise, freq=(freq*(20/4)), q=10, mul=.4)
-
-p1 = Sine(freq=([100, 300, 500]), mul=p1Env).mix(1)
-#p2 = Sine(freq=(freq*2)+Randi(-randDev, randDev, 5)+transV, mul=p2Env)
-#p3 = Sine(freq=(freq*3)+Randi(-randDev, randDev, 5)+transV, mul=p3Env)
-#p4 = Sine(freq=(freq*4)+Randi(-randDev, randDev, 5)-transV, mul=p4Env)
-#p5 = Sine(freq=(freq*4)+Randi(-randDev, randDev, 5)-transV, mul=p5Env)
-#p6 = Sine(freq=(freq*4)+Randi(-randDev, randDev, 5)-transV, mul=p6Env)
-
-sound = STRev(Mix(p1, 1), inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
-SL = Mix(sound, 1).out()
-SR = Mix(sound, 1).out(1)
-
+'''
 p1Mul.ctrl(title="p1Mul")
 p2Mul.ctrl(title="p2Mul")
 p3Mul.ctrl(title="p3Mul")
@@ -76,7 +54,7 @@ p5Env.ctrl(title="p5Env")
 p6Env.ctrl(title="p6Env")
 noise.ctrl(title="Noise")
 noiseEnv.ctrl(title="Noise Envelope")
-
+'''
 '''
 def trans():
     transV.value = Adsr(attack=240, release=10, mul=1000).play()
