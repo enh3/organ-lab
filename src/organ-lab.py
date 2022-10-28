@@ -6,8 +6,6 @@ s = Server()
 s.setMidiInputDevice(99)
 s.boot()
 
-#muls = [1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0]
-
 class Stop :
     def __init__(self, part, mul, att, rel, rand):
         self.note = Notein(poly=10, scale=0, first=0, last=127, channel=0, mul=1)
@@ -30,33 +28,11 @@ class Stop :
         "Sends the synth's signal to the audio output and return the object itself."
         self.mix.out()
         return self
-        
-#bourdon = Stop([1, 0.01, 0.5], [1, 1, 1], [0.1, 0.1, 0.1], [0.1, 0.1, 0.1], .1).out()
 
 bourdon = Stop([1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], .1).out()
 
 #note = NoteinSustain(scale=0)
 
-
-#sound = STRev(Mix(p1, 1), inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
-
-
-'''
-p1Mul.ctrl(title="p1Mul")
-p2Mul.ctrl(title="p2Mul")
-p3Mul.ctrl(title="p3Mul")
-p4Mul.ctrl(title="p4Mul")
-p5Mul.ctrl(title="p5Mul")
-p6Mul.ctrl(title="p6Mul")
-p1Env.ctrl(title="p1Env")
-p2Env.ctrl(title="p2Env")
-p3Env.ctrl(title="p3Env")
-p4Env.ctrl(title="p4Env")
-p5Env.ctrl(title="p5Env")
-p6Env.ctrl(title="p6Env")
-noise.ctrl(title="Noise")
-noiseEnv.ctrl(title="Noise Envelope")
-'''
 '''
 def trans():
     transV.value = Adsr(attack=240, release=10, mul=1000).play()
