@@ -15,39 +15,51 @@ class Stop :
         self.attacks = att
         self.releases = rel
         self.rand = rand
+        self.randObj = Randi(self.rand, self.rand, 5)
         self.freq = MToF(self.note['pitch'])
         self.pitch = [(partial * self.freq) for partial in self.partials]
         self.noiseEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=0.146, sustain=0.70, release=0.1)
         self.noise = PinkNoise(0.7) * self.noiseEnv
         self.noise = Reson(self.noise, freq=(self.freq*(20/4)), q=10, mul=.4)
         self.noise = Mix(self.noise, 1)
-        self.gen = [Sine(freq=pit+Randi(-rand, rand, 5), mul=amp*MidiAdsr(self.note['velocity'], attack=attacks, decay=0, sustain=1, release=releases)) for pit, amp, attacks, releases, rand in zip(self.pitch, self.muls, self.attacks, self.releases, self.rand)]
-        self.sound = Mix(self.gen, 1)
+        self.gen = Sine
+        self.sound = [Sine(freq=pit+rand, mul=amp*MidiAdsr(self.note['velocity'], attack=attacks, decay=0, sustain=1, release=releases)) for pit, rand, amp, attacks, releases in zip(self.pitch, self.randObj, self.muls, self.attacks, self.releases)]
+        self.sound = Mix(self.sound, 1)
         self.mix = STRev(self.sound+self.noise, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
-    def setPartials(self, x):
-        self.gen.sine.freqSet = x
-    def setRand(self, x):
-        self.rand = x
-        print(self.rand)
     def out(self):
-        "Sends the synth's signal to the audio output and return the object itself."
+        #"Sends the synth's signal to the audio output and return the object itself."
         self.mix.out()
         return self
+    #def setPartials(self, x):
+        #self.partials = x
+    def setRand(self, x):
+        self.rand = x
+        self.randObj.min = -x
+        self.randObj.max = x
+        print(self.rand)
+        print(self.randObj.min)
+        print(self.randObj.max)
+        
+def rand():
+    bourdon.setRand(100)
+    
+pat2 = Pattern(function=rand, time=1).play()
 
-bourdon = Stop([1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [.2]).out()
+bourdon = Stop([1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], .1).out()
 
 #a = bourdon.setRand(100)
 
 #note = NoteinSustain(scale=0)
 
+'''
 def bourdonToPrincipal():
     bourdon.setPartials([1, 0.8, 0.5, 0.7, 0.2, 0.6, 0.1, 0.5, 0.1, 0.4, 0.06, 0.3, 0.03, 0.3, 0.01, 0.3, 0.01, 0.2, 0.01, 0.2])
     print(bourdon.part)
+'''
 
-def rand():
-    bourdon.setRand([100])
-    print(bourdon.rand)
-    
+
+   
+ 
 '''
 def dissoc():
     
@@ -81,8 +93,8 @@ def stateChanges(address, *args):
 #pat = Pattern(function=printM, time=3).play()
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
     
-pat1 = Pattern(function=bourdonToPrincipal, time=1).play()
-pat2 = Pattern(function=rand, time=1).play()
+#pat1 = Pattern(function=bourdonToPrincipal, time=1).play()
+
 
 '''
 def trans():
