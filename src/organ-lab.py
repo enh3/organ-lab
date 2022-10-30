@@ -21,17 +21,69 @@ class Stop :
         self.noise = PinkNoise(0.7) * self.noiseEnv
         self.noise = Reson(self.noise, freq=(self.freq*(20/4)), q=10, mul=.4)
         self.noise = Mix(self.noise, 1)
-        self.sound = [Sine(freq=pit, mul=amp*MidiAdsr(self.note['velocity'], attack=attacks, decay=0, sustain=1, release=releases)) for pit, amp, attacks, releases in zip(self.pitch, self.muls, self.attacks, self.releases)]
+        self.sound = [Sine(freq=pit+Randi(-rand, rand, 5), mul=amp*MidiAdsr(self.note['velocity'], attack=attacks, decay=0, sustain=1, release=releases)) for pit, amp, attacks, releases, rand in zip(self.pitch, self.muls, self.attacks, self.releases, self.rand)]
         self.sound = Mix(self.sound, 1)
         self.mix = STRev(self.sound+self.noise, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
+    def setPartials(self, x):
+        n = 0
+        for part in x:
+            self.partials[n] = x[n]
+            n += 1
+        print(x)
+        print(self.partials)
+    def setRand(self, x):
+        self.rand = x
+        print(self.rand)
     def out(self):
         "Sends the synth's signal to the audio output and return the object itself."
         self.mix.out()
         return self
 
-bourdon = Stop([1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], .1).out()
+bourdon = Stop([1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [.2]).out()
+
+#a = bourdon.setRand(100)
 
 #note = NoteinSustain(scale=0)
+
+def bourdonToPrincipal():
+    bourdon.setPartials([1, 0.8, 0.5, 0.7, 0.2, 0.6, 0.1, 0.5, 0.1, 0.4, 0.06, 0.3, 0.03, 0.3, 0.01, 0.3, 0.01, 0.2, 0.01, 0.2])
+    
+def rand():
+    bourdon.setRand([100])
+
+'''
+def dissoc():
+    
+def softAtk():
+
+'''
+
+i = 0
+currentFunc = 0
+
+def stateChanges(address, *args):
+    global i
+    if address == "/continue" and args[0] == 1:
+        i += 1
+        print(i)
+    elif address == "/return" and args[0] == 1:
+        i -= 1
+        print(i)
+    if i == 1:
+        bourdonToPrincipal()
+    elif i == 2:
+        rand()
+    elif i == 3:
+        softAtk()
+
+
+#if rec["/continue"] == 1 :
+   # print("hello")
+    #env.play()
+    
+#pat = Pattern(function=printM, time=3).play()
+scan = OscDataReceive(port=9002, address="*", function=stateChanges)
+    
 
 '''
 def trans():
