@@ -16,22 +16,24 @@ class Stop :
         self.releases = rel
         self.rand = rand
         self.randObj = Randi(self.rand, self.rand, 5)
+        self.mulsObj = Sig(self.muls)
         self.freq = MToF(self.note['pitch'])
         self.pitch = [(partial * self.freq) for partial in self.partials]
         self.noiseEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=0.146, sustain=0.70, release=0.1)
         self.noise = PinkNoise(0.7) * self.noiseEnv
         self.noise = Reson(self.noise, freq=(self.freq*(20/4)), q=10, mul=.4)
         self.noise = Mix(self.noise, 1)
-        self.gen = Sine
-        self.sound = [Sine(freq=pit+rand, mul=amp*MidiAdsr(self.note['velocity'], attack=attacks, decay=0, sustain=1, release=releases)) for pit, rand, amp, attacks, releases in zip(self.pitch, self.randObj, self.muls, self.attacks, self.releases)]
+        self.sound = [Sine(freq=pit+rand, mul=amp*MidiAdsr(self.note['velocity'], attack=attacks, decay=0, sustain=1, release=releases)) for pit, rand, amp, attacks, releases in zip(self.pitch, self.randObj, self.mulsObj, self.attacks, self.releases)]
         self.sound = Mix(self.sound, 1)
         self.mix = STRev(self.sound+self.noise, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
     def out(self):
         #"Sends the synth's signal to the audio output and return the object itself."
         self.mix.out()
         return self
-    #def setPartials(self, x):
-        #self.partials = x
+    def setMuls(self, x):
+        self.mulsObj.value = x
+        print(self.muls)
+        print(self.mulsObj.value)
     def setRand(self, x):
         self.rand = x
         self.randObj.min = -x
@@ -43,19 +45,22 @@ class Stop :
 def rand():
     bourdon.setRand(100)
     
-pat2 = Pattern(function=rand, time=1).play()
+def bourdonToPrincipal():
+    bourdon.setMuls([0, 0, 0, 0, 0, 0, 0.1, 0.5, 0.1, 0.4, 0.06, 0.3, 0.03, 0.3, 0.01, 0.3, 0.01, 0.2, 0.01, 0.2])
+    
+pat2 = Pattern(function=bourdonToPrincipal, time=1).play()
 
-bourdon = Stop([1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0], [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], .1).out()
+partList = list(range(1, 21, 1))
+
+bourdon = Stop(partList, [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [.1, .4]).out()
 
 #a = bourdon.setRand(100)
 
 #note = NoteinSustain(scale=0)
 
-'''
-def bourdonToPrincipal():
-    bourdon.setPartials([1, 0.8, 0.5, 0.7, 0.2, 0.6, 0.1, 0.5, 0.1, 0.4, 0.06, 0.3, 0.03, 0.3, 0.01, 0.3, 0.01, 0.2, 0.01, 0.2])
-    print(bourdon.part)
-'''
+
+
+
 
 
    
