@@ -5,13 +5,12 @@ from random import random
 s = Server()
 s.setMidiInputDevice(99)
 s.boot()
-       
+
 class Stop:
     def __init__(self, part, mul, att, rel, rand, trans):
         # scale=1 to get pitch values in hertz
         self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0, mul=1)
         self.note.keyboard()
-
         self.amps = []
         self.envs = []
         self.snds = []
@@ -43,6 +42,10 @@ class Stop:
     def setTrans(self, x):
         for i in range(len(self.trans)):
             self.trans[i].value = x[i]
+            
+    def vel(self):
+        return self.note['velocity']
+            
        
 
 def bourdon():
@@ -70,16 +73,37 @@ def gliss():
         for i in range(len(glissC)):
             glissC[i] = 0
 
+'''
+def dissocie(x):
+    print("test")
+    
+  
+'''
+
+dissCount = 0
+def dissocie(x):
+    global dissCount
+    print(x)
+    if x != 0:
+        dissCount += 1
+        print(dissCount)
+        if dissCount > 1:
+            stop1.setMuls([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+            print("set0")
+        elif dissCount == 1 :
+            stop1.setMuls([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
+            print("setnon0")
+    if dissCount == 4:
+        dissCount = 0
+
+
 partList = list(range(1, 21, 1))
 transList = list(range(1, 21, 1))
 
 i = 0
 
-randP = Pattern(function=randGen, time=3)
-glissP = Pattern(function=gliss, time=0.1).play()
-
 def stateChanges(address, *args):
-    global i
+    global i, stopV
     if address == "/continue" and args[0] == 1:
         i += 1
         print(i)
@@ -89,7 +113,7 @@ def stateChanges(address, *args):
     if i == 1:
         bourdon()
     elif i == 2:
-        principal()
+        trigDiss.setThreshold(0)
     elif i == 3:
         randP.play()
     elif i == 4:
@@ -99,6 +123,15 @@ def stateChanges(address, *args):
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
 stop1 = Stop(partList, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], 2, transList).out()
+
+stopV = stop1.vel()
+dummy = Sig(0)
+trigDiss = Thresh(stop1.vel(), threshold=100, dir=0)
+
+randP = Pattern(function=randGen, time=3)
+glissP = Pattern(function=gliss, time=0.1)
+diss = Pattern(function=dissocie, time=0.5)
+tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
 
 s.amp = 0.3
 
