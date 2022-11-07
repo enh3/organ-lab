@@ -7,17 +7,16 @@ s.setMidiInputDevice(99)
 s.boot()
 
 class Stop:
-    def __init__(self, part, mul, att, rel, rand, trans):
+    def __init__(self, part, mul, att, rel, rand, trans, ramp):
         # scale=1 to get pitch values in hertz
         self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0, mul=1)
         self.note.keyboard()
-        self.ampsOrigin = []
+        self.ramp = ramp
         self.amps = []
         self.envs = []
         self.snds = []
         self.mixed = []
         self.trans = []
-        self.call = TrigFunc(self.note["trigon"], self.ampsScale, arg=list(range(10)))
         self.noiseEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=0.146, sustain=0.70, release=0.1)
         self.noise = PinkNoise(1.5) * self.noiseEnv
         self.noise = Reson(self.noise, freq=(self.note['pitch']*(20/4)), q=10, mul=.4)
@@ -25,22 +24,23 @@ class Stop:
         # Handles the user polyphony independently to avoid mixed polyphony concerns (self.note already contains 10 streams)
         for i in range(len(part)):
             # SigTo to avoid clicks
-            self.ampsOrigin.append(SigTo(mul[i], time=0.025))
-            self.amps.append(SigTo(mul[i], time=0.025))
+            self.amps.append(SigTo(mul[i], time=self.ramp))
             self.envs.append(MidiAdsr(self.note['velocity'], attack=att[i], decay=0, sustain=1, release=rel[i], mul=self.amps[-1]))
             self.trans.append(SigTo(trans[i], time=0.025))
             self.snds.append(Sine(freq=part[i] * self.note['pitch'] + Randi(-rand, rand, 5) + self.trans[-1], mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
-
-        self.mix = STRev(sum(self.mixed)+self.noise, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
+            
+        self.mix = ButLP(self.mixed, 2000).mix(2)
+        self.sp = Spectrum(self.mix)
+        self.mix = STRev(self.mix+self.noise, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
 
     def out(self):
         self.mix.out()
         return self
 
     def setMuls(self, x):
-        for i in range(len(self.ampsOrigin)):
-            self.ampsOrigin[i].value = x[i]
+        for i in range(len(self.amps)):
+            self.amps[i].value = x[i]
             
     def setTrans(self, x):
         for i in range(len(self.trans)):
@@ -48,13 +48,6 @@ class Stop:
             
     def vel(self):
         return self.note['velocity']
-        
-    def ampsScale(self, voice):
-        freq = self.note.get("pitch", all=True)[voice]
-        stretch_factor = rescale(freq, xmin=20, xmax=20000, ymin=1, ymax=0.5, xlog=True, ylog=True)
-        for i in range(len(self.amps)):
-            self.amps[i].value = self.ampsOrigin[i].value * ((stretch_factor**(((i+1)/2)+0.5))/stretch_factor)
-            print(i, '=', self.amps[i].value)
        
 
 def bourdon():
@@ -133,7 +126,7 @@ def stateChanges(address, *args):
 
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
-stop1 = Stop(partList, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], 2, transList).out()
+stop1 = Stop(partList, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], 2, transList, 5).out()
 
 stopV = stop1.vel()
 dummy = Sig(0)
