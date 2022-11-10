@@ -138,7 +138,8 @@ def stateChanges(address, *args):
         i -= 1
         print(i)
     if i == 1:
-        glissUpP.play()
+        trigDiss.setInput(0)
+        #glissUpP.play()
     elif i == 2:
         glissUpP.stop()
         transReset()
@@ -159,19 +160,20 @@ def stateChanges(address, *args):
     elif i ==8:
         glissUpP.stop()
         trigDiss.setThreshold(0)
+        
 
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
 stop1 = Stop(partList, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], 2, transList, 0.02).out()
 
 stopV = stop1.vel()
-dummy = Sig(0)
-trigDiss = Thresh(stop1.vel(), threshold=100, dir=0)
+dummy = Sig([0]*10) 
+trigDiss = Thresh(dummy, threshold=100, dir=0)
 
 randP = Pattern(function=randGen, time=3)
 glissUpP = Pattern(function=glissUp, time=0.08)
 diss = Pattern(function=dissocie, time=0.5)
-tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
+tr = TrigFunc(trigDiss, function=dissocie, arg=list(range(10)))
 glissContP = Pattern(function=glissCont, time=0.1)
 
 s.amp = 0.3
