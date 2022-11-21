@@ -1,15 +1,17 @@
 from pyo import *
+from s047_midi_sustain_and_polyphony import NoteinSustain
 from random import random
 
-
+pa_list_devices()
 s = Server()
+s.setOutputDevice(2)
 s.setMidiInputDevice(99)
 s.boot()
 
 class Stop:
     def __init__(self, part, mul, att, rel, rand, trans, ramp):
         # scale=1 to get pitch values in hertz
-        self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0, mul=1)
+        self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
         self.note.keyboard()
         self.ramp = Sig(ramp)
         self.amps = []
@@ -56,18 +58,23 @@ class Stop:
 
 def bourdon():
     stop1.setMuls([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
+    print(bourdon)
     
 def principal():
     stop1.setMuls([1, 0.4, 0.3, 0.2, 0.2, 0.08, 0.04, 0.06, 0.004, 0.003, 0.003, 0.003, 0.003, 0.002, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001])
+    print(principal)
     
 def voixHumaine():
     stop1.setMuls([0.3, 0.5, 0.3, 0.3, 0.7, 0.5, 0.04, 0.2, 0.04, 0.3, 0.003, 0.003, 0.003, 0.002, 0.1, 0.001, 0.001, 0, 0, 0.002])
+    print(voixHumaine)
     
 def cornet():
     stop1.setMuls([0, 0.4, 0.3, 0.6, 0.5, 0.09, 0, 0.09, 0.004, 0.2, 0, 0.1, 0, 0.002, 0.01, 0.08, 0, 0, 0, 0.001])
+    print(cornet)
 
-def randGen():
+def randMuls():
     stop1.setMuls([random(), random()*0.5, random()*0.3, random()*0.2, random()*0.1, random()*0.05, random()*0.03, random()*0.01, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005])
+    print(randGen)
     
 def setRamp(x):
     stop1.setRamp(x)
@@ -138,8 +145,7 @@ def stateChanges(address, *args):
         i -= 1
         print(i)
     if i == 1:
-        trigDiss.setInput(0)
-        #glissUpP.play()
+        glissUpP.play()
     elif i == 2:
         glissUpP.stop()
         transReset()
@@ -150,30 +156,32 @@ def stateChanges(address, *args):
     elif i == 4:
         voixHumaine()
     elif i == 5:
+        randAmpsP.stop()
+        setRamp(5)
         cornet()
     elif i == 6:
+        glissUpP.stop()
         setRamp(0.02)
-        randP.play()
+        randAmpsP.play()
     elif i == 7:
         randP.stop()
         glissUpP.play()
     elif i ==8:
         glissUpP.stop()
         trigDiss.setThreshold(0)
-        
 
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
 stop1 = Stop(partList, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], 2, transList, 0.02).out()
 
 stopV = stop1.vel()
-dummy = Sig([0]*10) 
-trigDiss = Thresh(dummy, threshold=100, dir=0)
+dummy = Sig(0)
+trigDiss = Thresh(stop1.vel(), threshold=100, dir=0)
 
-randP = Pattern(function=randGen, time=3)
+randAmpsP = Pattern(function=randAmps, time=3)
 glissUpP = Pattern(function=glissUp, time=0.08)
 diss = Pattern(function=dissocie, time=0.5)
-tr = TrigFunc(trigDiss, function=dissocie, arg=list(range(10)))
+tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
 glissContP = Pattern(function=glissCont, time=0.1)
 
 s.amp = 0.3
