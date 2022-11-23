@@ -4,16 +4,17 @@ from random import random
 
 pa_list_devices()
 s = Server()
-s.setOutputDevice(3)
+s.setOutputDevice(2)
 s.setMidiInputDevice(99)
 s.boot()
 
 class Stop:
-    def __init__(self, part, mul, att, rel, rand, trans, ramp):
+    def __init__(self, part, partScale, mul, att, rel, rand, trans, ramp):
         # scale=1 to get pitch values in hertz
         self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
         self.note.keyboard()
         self.ramp = Sig(ramp)
+        self.partScale = Sig(partScale)
         self.amps = []
         self.envs = []
         self.part = []
@@ -30,8 +31,8 @@ class Stop:
             self.amps.append(SigTo(mul[i], time=self.ramp))
             self.envs.append(MidiAdsr(self.note['velocity'], attack=att[i], decay=0, sustain=1, release=rel[i], mul=self.amps[-1]))
             self.trans.append(SigTo(trans[i], time=0.025))
-            self.part.append(SigTo(part[i], time=5))
-            self.snds.append(Sine(freq=self.part[i] * self.note['pitch'] + Randi(-rand, rand, 5) + self.trans[-1], mul=self.envs[-1]))
+            self.part.append(SigTo(part[i], time=0.2))
+            self.snds.append(Sine(freq=(self.part[i]**self.partScale) * self.note['pitch'] + Randi(-rand, rand, 5) + self.trans[-1], mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
         
         self.mix = Mix(self.mixed, 2)
@@ -46,6 +47,9 @@ class Stop:
     def setPart(self, x):
         for i in range(len(self.part)):
             self.part[i].value = x[i]
+            
+    def setPartScale(self, x):
+        self.partScale.value = x
 
     def setMul(self, x):
         for i in range(len(self.amps)):
@@ -102,7 +106,7 @@ def glissUp():
     if glissC[0] < 600:
         stop1.setTrans(glissC)
         for i in range(len(glissC)):
-            glissC[i] = glissC[i] + 0.4
+            glissC[i] = glissC[i] + 2
     else:
         for i in range(len(glissC)):
             glissC[i] = 0
@@ -159,42 +163,52 @@ def stateChanges(address, *args):
         i -= 1
         print(i)
     if i == 1:
-        randPartP.play()
-        #glissUpP.play()
+        voixHumaine()
+        #randPartP.play()
+        print('partielsAléatoire')
     elif i == 2:
+        glissUpP.stop()
         randPartP.stop()
+        #stop1.setPartScale(0.9999999999999999999999999999999999)
+        print('scalaireDesPartiels')
+    elif i == 3:
+        stop1.setPartScale(1)
+        bourdon()
+        glissUpP.play()
+        print('glissUp')
+    elif i == 4:
         glissUpP.stop()
         transReset()
         setRamp(5)
         bourdon()
-    elif i == 3:
-        principal()
-    elif i == 4:
-        voixHumaine()
     elif i == 5:
+        principal()
+    elif i == 6:
+        voixHumaine()
+    elif i == 7:
         randMulP.stop()
         setRamp(5)
         cornet()
-    elif i == 6:
+    elif i == 8:
         glissUpP.stop()
         setRamp(0.02)
-        randAmpsP.play()
-    elif i == 7:
-        randP.stop()
-        glissUpP.play()
-    elif i ==8:
-        glissUpP.stop()
+        randMulP.play()
+    elif i == 9:
+        randMulP.stop()
+        glissContP.play()
+    elif i == 10:
+        glissContP.stop()
         trigDiss.setThreshold(0)
 
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
-stop1 = Stop(partList, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], 2, transList, 0.02).out()
+stop1 = Stop(partList, 1, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], 2, transList, 0.02).out()
 
 stopV = stop1.vel()
 dummy = Sig(0)
 trigDiss = Thresh(stop1.vel(), threshold=100, dir=0)
 
-randPartP = Pattern(function=randPart, time=5)
+randPartP = Pattern(function=randPart, time=30)
 randMulP = Pattern(function=randMul, time=3)
 glissUpP = Pattern(function=glissUp, time=0.08)
 diss = Pattern(function=dissocie, time=0.5)
