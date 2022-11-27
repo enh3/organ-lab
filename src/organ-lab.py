@@ -14,6 +14,7 @@ class Stop:
         self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
         self.note.keyboard()
         self.ramp = Sig(ramp)
+        print(partScale)
         self.partScale = Sig(partScale)
         self.amps = []
         self.envs = []
@@ -21,11 +22,15 @@ class Stop:
         self.snds = []
         self.mixed = []
         self.trans = []
-        self.partScaleEnv = Sig(1+partScale) - (MidiAdsr(self.note['velocity'], attack=0.001, decay=1, sustain=(partScale), release=3))
+        self.velocity = [Clip(Sig(v), max=0.01, mul=100) for v in self.note['velocity']]
+        self.partScaleEnv = MidiAdsr(self.velocity, attack=0.001, decay=1, sustain=partScale, release=3)#+Sig(partScale)
+        self.partScaleEnvReversed = (Sig(1)-self.partScaleEnv)+Sig(partScale)
         self.noiseEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=0.146, sustain=0.70, release=0.1)
         self.noise = PinkNoise(1.5) * self.noiseEnv
         self.noise = Reson(self.noise, freq=(self.note['pitch']*(20/4)), q=10, mul=.4)
         self.noise = Mix(self.noise, 1)
+        self.call = TrigFunc(self.note["velocity"], self.printVel, arg=self.note['velocity'])
+        self.pp = Print(self.partScaleEnvReversed, interval=0.1, message="Audio stream value")
         # Handles the user polyphony independently to avoid mixed polyphony concerns (self.note already contains 10 streams)
         for i in range(len(part)):
             # SigTo to avoid clicks
@@ -33,9 +38,9 @@ class Stop:
             self.envs.append(MidiAdsr(self.note['velocity'], attack=att[i], decay=0, sustain=1, release=rel[i], mul=self.amps[-1]))
             self.trans.append(SigTo(trans[i], time=0.025))
             self.part.append(SigTo(part[i], time=0.2))
-            self.snds.append(Sine(freq=(self.part[i]**self.partScaleEnv) * self.note['pitch'] + Randi(-rand, rand, 5) + self.trans[-1], mul=self.envs[-1]))
+            self.snds.append(Sine(freq=(self.part[i]**self.partScaleEnvReversed) * self.note['pitch'] + Randi(-rand, rand, 5) + self.trans[-1], mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
-        pp = Print(self.partScaleEnv, interval=1, message="Audio stream value")
+        print("Float from audio stream : ", self.partScaleEnv.get())
         self.mix = Mix(self.mixed, 2)
         self.sp = Spectrum(self.mix)
         self.filt = ButLP(self.mix+self.noise, 2000)
@@ -44,6 +49,13 @@ class Stop:
     def out(self):
         self.rev.out()
         return self
+        
+    def printVel(self, x):
+        print("Float from audio stream : ", x.get())
+        
+    def setPartScaleEnvSus(self, x):
+        self.partScaleEnv.setSustain(x)
+        print(x)
         
     def setPart(self, x):
         for i in range(len(self.part)):
@@ -171,7 +183,7 @@ def stateChanges(address, *args):
     elif i == 2:
         #glissUpP.stop()
         randPartP.stop()
-        stop1.setPartScale(0.9)
+        stop1.setPartScaleEnvSus(0.7)
         print('scalaireDesPartiels')
     elif i == 3:
         stop1.setPartScale(1)
