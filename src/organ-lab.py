@@ -28,8 +28,9 @@ class Stop:
         self.noise = Reson(self.noise, freq=(self.note['pitch']*(20/4)), q=4, mul=1)
         self.noise = Mix(self.noise, 1)
         self.fmEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=2, sustain=0.30, release=2)
-        self.fm = FM(carrier=self.note['pitch']*4, ratio=0.43982735, index=2, mul=self.fmEnv)
-        self.fmMix = Mix(self.fm, 2)
+        self.fm1 = FM(carrier=self.note['pitch']*4, ratio=0.43982735, index=2.11232, mul=self.fmEnv)
+        self.fm2 = FM(carrier=self.fm1, ratio=0.72348, index=1.376, mul=self.fmEnv)
+        self.fmMix = Mix(self.fm1, 2)
         #self.pp = Print(self.partScale, interval=0.3, message="Audio stream value")
         # Handles the user polyphony independently to avoid mixed polyphony concerns (self.note already contains 10 streams)
         for i in range(len(part)):
