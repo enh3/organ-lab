@@ -23,11 +23,11 @@ class Stop:
         self.trans = []
         self.velocity = [Clip(Sig(v), max=0.01, mul=100) for v in self.note['velocity']]
         self.partScale = MidiAdsr(self.velocity, attack=0.001, decay=5, sustain=1/partScale, release=3, mul=partScale)#+Sig(partScale)
-        self.noiseEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=0.1, sustain=0.30, release=0.1)
+        self.noiseEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=0.1, sustain=0.01, release=0.1)
         self.noise = PinkNoise(1.5) * self.noiseEnv
-        self.noise = Reson(self.noise, freq=(self.note['pitch']*(20/4)), q=10, mul=.4)
+        self.noise = Reson(self.noise, freq=(self.note['pitch']*(20/4)), q=4, mul=1)
         self.noise = Mix(self.noise, 1)
-        self.fmEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=2, sustain=0.30, release=0.1)
+        self.fmEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=2, sustain=0.30, release=2)
         self.fm = FM(carrier=self.note['pitch']*4, ratio=0.634987, index=2, mul=self.fmEnv)
         self.fmMix = Mix(self.fm, 2)
         #self.pp = Print(self.partScale, interval=0.3, message="Audio stream value")
@@ -198,6 +198,7 @@ def stateChanges(address, *args):
         randPartP.stop()
         stop1.setEnvDec([4, 5, 3, .1, .3, 0.4, .04, 0.4, .4, 0.4, .4, 0.4, .4, 0.4, .4, 0.4, .4, 0.4, .4, 0.4])
         stop1.setEnvSus([.2, .1, .2, .1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .2, 0.2])
+        stop1.setEnvRel([4]*20)
         stop1.setPartScale(1.2)
         print('scalaireDesPartiels')
     elif i == 3:
