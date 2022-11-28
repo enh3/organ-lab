@@ -28,7 +28,7 @@ class Stop:
         self.noise = Reson(self.noise, freq=(self.note['pitch']*(20/4)), q=4, mul=1)
         self.noise = Mix(self.noise, 1)
         self.fmEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=2, sustain=0.30, release=2)
-        self.fm = FM(carrier=self.note['pitch']*4, ratio=0.634987, index=2, mul=self.fmEnv)
+        self.fm = FM(carrier=self.note['pitch']*4, ratio=0.43982735, index=2, mul=self.fmEnv)
         self.fmMix = Mix(self.fm, 2)
         #self.pp = Print(self.partScale, interval=0.3, message="Audio stream value")
         # Handles the user polyphony independently to avoid mixed polyphony concerns (self.note already contains 10 streams)
@@ -199,7 +199,7 @@ def stateChanges(address, *args):
         stop1.setEnvDec([4, 5, 3, .1, .3, 0.4, .04, 0.4, .4, 0.4, .4, 0.4, .4, 0.4, .4, 0.4, .4, 0.4, .4, 0.4])
         stop1.setEnvSus([.2, .1, .2, .1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .2, 0.2])
         stop1.setEnvRel([4]*20)
-        stop1.setPartScale(1.2)
+        stop1.setPartScale(1.1)
         print('scalaireDesPartiels')
     elif i == 3:
         stop1.setPartScale(1)
