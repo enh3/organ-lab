@@ -15,7 +15,7 @@ class Stop:
         self.note.keyboard()
         self.ramp = Sig(ramp)
         print(partScale)
-        self.partScale = Sig(partScale)
+        #self.partScale = Sig(partScale)
         self.amps = []
         self.envs = []
         self.part = []
@@ -23,14 +23,14 @@ class Stop:
         self.mixed = []
         self.trans = []
         self.velocity = [Clip(Sig(v), max=0.01, mul=100) for v in self.note['velocity']]
-        self.partScaleEnv = MidiAdsr(self.velocity, attack=0.001, decay=1, sustain=partScale, release=3)#+Sig(partScale)
-        self.partScaleEnvReversed = (Sig(1)-self.partScaleEnv)+Sig(partScale)
+        self.partScale = MidiAdsr(self.velocity, attack=0.001, decay=1, sustain=1/partScale, release=3, mul=partScale)#+Sig(partScale)
+        #self.pScEnvGet = Sig(self.partScaleEnv.get())
+        #self.partScaleEnvReversed = Sig(rescale(self.pScEnvGet, xmin=partScale, xmax=1, ymin=1, ymax=partScale, xlog=False, ylog=False).get()) #self.partScaleEnvReversed = (Sig(1)-self.partScaleEnv)+Sig(partScale)
         self.noiseEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=0.146, sustain=0.70, release=0.1)
         self.noise = PinkNoise(1.5) * self.noiseEnv
         self.noise = Reson(self.noise, freq=(self.note['pitch']*(20/4)), q=10, mul=.4)
         self.noise = Mix(self.noise, 1)
-        self.call = TrigFunc(self.note["velocity"], self.printVel, arg=self.note['velocity'])
-        self.pp = Print(self.partScaleEnvReversed, interval=0.1, message="Audio stream value")
+        #self.pp = Print(self.partScaleEnvReversed, interval=0.1, message="Audio stream value")
         # Handles the user polyphony independently to avoid mixed polyphony concerns (self.note already contains 10 streams)
         for i in range(len(part)):
             # SigTo to avoid clicks
@@ -38,32 +38,25 @@ class Stop:
             self.envs.append(MidiAdsr(self.note['velocity'], attack=att[i], decay=0, sustain=1, release=rel[i], mul=self.amps[-1]))
             self.trans.append(SigTo(trans[i], time=0.025))
             self.part.append(SigTo(part[i], time=0.2))
-            self.snds.append(Sine(freq=(self.part[i]**self.partScaleEnvReversed) * self.note['pitch'] + Randi(-rand, rand, 5) + self.trans[-1], mul=self.envs[-1]))
+            self.snds.append(Sine(freq=(self.part[i]**self.partScale) * self.note['pitch'] + Randi(-rand, rand, 5) + self.trans[-1], mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
-        print("Float from audio stream : ", self.partScaleEnv.get())
         self.mix = Mix(self.mixed, 2)
         self.sp = Spectrum(self.mix)
         self.filt = ButLP(self.mix+self.noise, 2000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
+        self.tf = TrigFunc(self.note["trigon"], function=self.setPartScale, arg=list(range(10))) # Notein.poly defaults to 10
 
     def out(self):
         self.rev.out()
         return self
         
-    def printVel(self, x):
-        print("Float from audio stream : ", x.get())
-        
-    def setPartScaleEnvSus(self, x):
-        self.partScaleEnv.setSustain(x)
-        print(x)
+    def setPartScale(self, x):
+        self.partScale.setSustain(1/x)
+        self.partScale.setMul(x)
         
     def setPart(self, x):
         for i in range(len(self.part)):
             self.part[i].value = x[i]
-            
-    def setPartScale(self, x):
-        self.partScale.value = x
-        print(x)
 
     def setMul(self, x):
         for i in range(len(self.amps)):
@@ -183,7 +176,7 @@ def stateChanges(address, *args):
     elif i == 2:
         #glissUpP.stop()
         randPartP.stop()
-        stop1.setPartScaleEnvSus(0.7)
+        stop1.setPartScale(0.7)
         print('scalaireDesPartiels')
     elif i == 3:
         stop1.setPartScale(1)
