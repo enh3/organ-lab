@@ -1,20 +1,23 @@
+import random
 from pyo import *
 from s047_midi_sustain_and_polyphony import NoteinSustain
-from random import random
+
 
 #pa_list_devices()
+pm_list_devices()
 s = Server()
 s.setOutputDevice(1)
-s.setMidiInputDevice(99)
+s.setMidiOutputDevice(1)
+s.setMidiInputDevice(0)
 s.boot()
 
-class Stop(EventInstrument):
-    def __init__(self, **args):
-        EventInstrument.__init__(self, **args)
+class Stop:
+    def __init__(self, part, partScale, mul, att, rel, noiseAtt, noiseRel, rand, trans, ramp):
         # scale=1 to get pitch values in hertz
         self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
         self.note.keyboard()
         self.ramp = Sig(ramp)
+        print(partScale)
         self.amps = []
         self.envs = []
         self.part = []
@@ -23,12 +26,12 @@ class Stop(EventInstrument):
         self.trans = []
         self.velocity = [Clip(Sig(v), max=0.01, mul=100) for v in self.note['velocity']]
         self.partScale = MidiAdsr(self.velocity, attack=0.001, decay=5, sustain=1/partScale, release=3, mul=partScale)#+Sig(partScale)
-        self.noiseEnv = MidiAdsr(self.freq, attack=0.001, decay=0.1, sustain=0.01, release=0.1)
+        self.noiseEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=0.1, sustain=0.01, release=0.1)
         self.noise = PinkNoise(1.5) * self.noiseEnv
-        self.noise = Reson(self.noise, freq=(self.freq*(20/4)), q=4, mul=1)
+        self.noise = Reson(self.noise, freq=(self.note['pitch']*(20/4)), q=4, mul=1)
         self.noise = Mix(self.noise, 1)
-        self.fmEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=2, sustain=0.30, release=2, mul=fmMul)
-        self.fm1 = FM(carrier=self.freq*4, ratio=0.43982735, index=2.11232, mul=self.fmEnv)
+        self.fmEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=2, sustain=0.30, release=2)
+        self.fm1 = FM(carrier=self.note['pitch']*4, ratio=0.43982735, index=2.11232, mul=self.fmEnv)
         self.fm2 = FM(carrier=self.fm1, ratio=0.72348, index=1.376, mul=self.fmEnv)
         self.fmMix = Mix(self.fm1, 2)
         #self.pp = Print(self.partScale, interval=0.3, message="Audio stream value")
@@ -39,7 +42,7 @@ class Stop(EventInstrument):
             self.envs.append(MidiAdsr(self.note['velocity'], attack=att[i], decay=0, sustain=1, release=rel[i], mul=self.amps[-1]))
             self.trans.append(SigTo(trans[i], time=0.025))
             self.part.append(SigTo(part[i], time=0.2))
-            self.snds.append(Sine(freq=(self.part[i]**self.partScale) * self.freq + Randi(-rand, rand, 5) + self.trans[-1], mul=self.envs[-1]))
+            self.snds.append(Sine(freq=(self.part[i]**self.partScale) * self.note['pitch'] + Randi(-rand, rand, 5) + self.trans[-1], mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2)
         self.sp = Spectrum(self.mix)
@@ -50,10 +53,6 @@ class Stop(EventInstrument):
     def out(self):
         self.rev.out()
         return self
-        
-    def setfmEnvMul(self, x):
-        self.fmEnv.setMul(x)
-        print(x)
         
     def setEnvAtt(self, x):
         for i in range(len(self.envs)):
@@ -97,7 +96,7 @@ class Stop(EventInstrument):
     def vel(self):
         return self.note['velocity']
        
-'''
+
 def bourdon():
     stop1.setMul([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
     print(bourdon)
@@ -181,7 +180,8 @@ def dissocie(x):
         dissCount = 0
 
 
-
+partList = list(range(1, 21, 1))
+transList = list(range(1, 21, 1))
 
 i = 0
 
@@ -194,20 +194,18 @@ def stateChanges(address, *args):
         i -= 1
         print(i)
     if i == 1:
-        bourdon()
-        glissUpP.play()
-        time.sleep(2)
-        e.play()
+        #voixHumaine()
+        #randPartP.play()
+        print('partielsAléatoire')
     elif i == 2:
-        glissUpP.stop()
+        #glissUpP.stop()
         randPartP.stop()
         stop1.setEnvDec([4, 5, 3, .1, .3, 0.4, .04, 0.4, .4, 0.4, .4, 0.4, .4, 0.4, .4, 0.4, .4, 0.4, .4, 0.4])
         stop1.setEnvSus([.2, .1, .2, .1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .2, 0.2])
         stop1.setEnvRel([4]*20)
         stop1.setPartScale(1.1)
+        print('scalaireDesPartiels')
     elif i == 3:
-        #voixHumaine()
-        #randPartP.play()
         stop1.setPartScale(1)
         bourdon()
         glissUpP.play()
@@ -238,10 +236,7 @@ def stateChanges(address, *args):
 
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
-stop1 = Stop(partList, 1, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], 1, [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], 0.1, 0.1, 2, transList, 0.02).out()
-
-
-
+stop1 = Stop(partList, 1, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], [0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1], 0.1, 0.1, 2, transList, 0.02).out()
 
 stopV = stop1.vel()
 dummy = Sig(0)
@@ -254,29 +249,40 @@ diss = Pattern(function=dissocie, time=0.5)
 tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
 glissContP = Pattern(function=glissCont, time=0.1)
 
-'''
+# Generates an audio ramp from 36 to 84, from
+# which MIDI pitches will be extracted.
+pitch = Phasor(freq=11, mul=48, add=36)
 
-partList = list(range(1, 21, 1))
-transList = list(range(1, 21, 1))
+# Global variable to count the down and up beats.
+count = 0
 
 
-e = Events(
-    instr=Stop,
-    part=partList,
-    partScale=1,
-    mul=[1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0],
-    fmMul=1,
-    att=[0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
-    rel=[0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1],
-    noiseAtt=0.1,
-    noiseRel=0.1,
-    rand=2,
-    trans=transList,
-    ramp=0.02,
-    degree=EventSeq([5.00, 5.04, 5.07, 6.00]),
-    beat=1 / 2.0,
-    db=-12,
-).play()
+def midi_event():
+    global count
+    # Retrieve the value of the pitch audio stream and convert it to an int.
+    pit = int(pitch.get())
+
+    # If the count is 0 (down beat), play a louder and longer event, otherwise
+    # play a softer and shorter one.
+    if count == 0:
+        vel = random.randint(90, 110)
+        dur = 500
+    else:
+        vel = random.randint(50, 70)
+        dur = 125
+
+    # Increase and wrap the count to generate a 4 beats sequence.
+    count = (count + 1) % 4
+
+    print("pitch: %d, velocity: %d, duration: %d" % (pit, vel, dur))
+
+    # The Server's `makenote` method generates a noteon event immediately
+    # and the correponding noteoff event after `duration` milliseconds.
+    s.makenote(pitch=pit, velocity=vel, duration=dur)
+
+
+# Generates a MIDI event every 125 milliseconds.
+pat = Pattern(midi_event, 0.5).play()
 
 s.amp = 0.3
 
