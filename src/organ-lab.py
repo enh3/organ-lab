@@ -30,7 +30,7 @@ class Stop:
         self.mixed = []
         self.trans = []
         self.velocity = [Clip(Sig(v), max=0.01, mul=100) for v in self.note['velocity']]
-        self.partScale = MidiAdsr(self.velocity, attack=0.001, decay=1, sustain=1/partScale, release=0.0001, mul=partScale)
+        self.partScale = SigTo(1, time=10, init=partScale)
         self.noiseEnv = MidiAdsr(self.note['velocity'], attack=self.noiseAtt.value, decay=self.noiseDec.value, sustain=self.noiseSus.value, release=self.noiseRel.value)
         self.noise = PinkNoise(1.5) * self.noiseEnv
         self.noise = Reson(self.noise, freq=(self.note['pitch']*(20/4)), q=self.noiseFiltQ)
@@ -287,7 +287,7 @@ def stateChanges(address, *args):
         print('9e Elegie - Pourquoi, s’il est loisible aussi bien')
         randMulP.stop()
         glissContP.play()
-    #10e Elegie - ienne le jour enfin
+    #10e Elegie - Vienne le jour enfin
     elif i == 10:
         print('10e Elegie - Vienne le jour enfin')
         glissContP.stop()
@@ -295,9 +295,10 @@ def stateChanges(address, *args):
 
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
-stop1 = Stop(partList, 1, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], 0.001, 0.146, 0.70, 0.1, 0.4, 10, 2, transList, 0.02, 0, 0.1, 5).out()
+stop1 = Stop(partList, 0, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], 0.001, 0.146, 0.70, 0.1, 0.4, 10, 1, transList, 0.02, 0, 0.01, 1.5).out()
 
-call = CallAfter(bell, time=1)
+#call = CallAfter(bell, time=1)
+voixHumaine()
 
 stopV = stop1.vel()
 dummy = Sig(0)
