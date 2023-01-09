@@ -11,7 +11,7 @@ s.setMidiInputDevice(0)
 s.boot()
 
 class Stop:
-    def __init__(self, part, partScale, mul, att, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseMul, noiseFiltQ, rand, trans, ramp, fmMul):
+    def __init__(self, part, partScale, mul, att, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseMul, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index):
         # scale=1 to get pitch values in hertz
         self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
         self.note.keyboard()
@@ -36,9 +36,11 @@ class Stop:
         self.noise = Reson(self.noise, freq=(self.note['pitch']*(20/4)), q=self.noiseFiltQ)
         self.noise = Mix(self.noise, 1, mul=self.noiseMul)
         self.fmEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=2, sustain=0.30, release=2)
-        self.fm1 = FM(carrier=self.note['pitch']*4, ratio=0.43982735, index=2.11232, mul=self.fmEnv)
-        self.fm2 = FM(carrier=self.fm1, ratio=0.72348, index=1.376, mul=self.fmEnv)
-        self.fmMix = Mix(self.fm1, 2, mul=self.fmMul)
+        #self.fm1 = FM(carrier=self.note['pitch']*4, ratio=0.43982735, index=2.11232, mul=self.fmEnv)
+        #self.fm2 = FM(carrier=self.fm1, ratio=0.72348, index=1.376, mul=self.fmEnv)
+        self.fmod = self.note['pitch'] * ratio
+        self.amod = self.fmod * index
+        self.mod = Sine(self.fmod, mul=self.amod)
         #self.pp = Print(self.partScale, interval=0.3, message="Audio stream value")
         # Handles the user polyphony independently to avoid mixed polyphony concerns (self.note already contains 10 streams)
         for i in range(len(part)):
@@ -47,11 +49,11 @@ class Stop:
             self.envs.append(MidiAdsr(self.note['velocity'], attack=att[i], decay=0, sustain=1, release=rel[i], mul=self.amps[-1]))
             self.trans.append(SigTo(trans[i], time=0.025))
             self.part.append(SigTo(part[i], time=0.2))
-            self.snds.append(Sine(freq=(self.part[i]**self.partScale) * self.note['pitch'] + Randi(-rand, rand, 5) + self.trans[-1], mul=self.envs[-1]))
+            self.snds.append(Sine(freq=(self.part[i]**self.partScale) * self.note['pitch'] + Randi(-rand, rand, 5) + self.trans[-1] + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=1)
         self.sp = Spectrum(self.mix)
-        self.filt = ButLP(self.mix+self.noise+self.fmMix, 2000)
+        self.filt = ButLP(self.mix+self.noise, 2000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
         #self.tf = TrigFunc(self.note["trigon"], function=self.setPartScale, arg=list(range(10))) # Notein.poly defaults to 10
 
@@ -293,7 +295,7 @@ def stateChanges(address, *args):
 
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
-stop1 = Stop(partList, 1, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], 0.001, 0.146, 0.70, 0.1, 0.4, 10, 2, transList, 0.02, 0).out()
+stop1 = Stop(partList, 1, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], 0.001, 0.146, 0.70, 0.1, 0.4, 10, 2, transList, 0.02, 0, 0.1, 5).out()
 
 call = CallAfter(bell, time=1)
 
