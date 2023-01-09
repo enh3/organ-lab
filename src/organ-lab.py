@@ -15,6 +15,7 @@ class Stop:
         # scale=1 to get pitch values in hertz
         self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
         self.note.keyboard()
+        #self.partScRat = Sig(partScRat)
         self.ramp = Sig(ramp)
         self.fmMul = Sig(fmMul)
         self.noiseAtt = Sig(noiseAtt)
@@ -30,22 +31,17 @@ class Stop:
         self.mixed = []
         self.trans = []
         self.velocity = [Clip(Sig(v), max=0.01, mul=100) for v in self.note['velocity']]
-        self.partScRat = [(0,partScRat), (2,1)]
-        self.partSc = MidiLinseg(self.velocity, self.partScRat)
-        #self.partScRat = Sig(partScRat)
-        #self.partSc = SigTo(1, time=4, init=self.partScRat.value)
+        self.partScEnv = [(0,partScRat), (2,1)]
+        self.partSc = MidiLinseg(self.velocity, self.partScEnv)
         self.pp = Print(self.partSc, interval=0.3, message="Audio stream value")
         self.noiseEnv = MidiAdsr(self.note['velocity'], attack=self.noiseAtt.value, decay=self.noiseDec.value, sustain=self.noiseSus.value, release=self.noiseRel.value)
         self.noise = PinkNoise(1.5) * self.noiseEnv
         self.noise = Reson(self.noise, freq=(self.note['pitch']*(20/4)), q=self.noiseFiltQ)
         self.noise = Mix(self.noise, 1, mul=self.noiseMul)
         self.fmEnv = MidiAdsr(self.note['trigon'], attack=0.001, decay=2, sustain=0.30, release=2)
-        #self.fm1 = FM(carrier=self.note['pitch']*4, ratio=0.43982735, index=2.11232, mul=self.fmEnv)
-        #self.fm2 = FM(carrier=self.fm1, ratio=0.72348, index=1.376, mul=self.fmEnv)
         self.fmod = self.note['pitch'] * ratio
         self.amod = self.fmod * index
         self.mod = Sine(self.fmod, mul=self.amod)
-        #self.pp = Print(self.partScale, interval=0.3, message="Audio stream value")
         # Handles the user polyphony independently to avoid mixed polyphony concerns (self.note already contains 10 streams)
         for i in range(len(part)):
             # SigTo to avoid clicks
@@ -59,7 +55,6 @@ class Stop:
         self.sp = Spectrum(self.mix)
         self.filt = ButLP(self.mix+self.noise, 2000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
-        #self.tf = TrigFunc(self.note["trigon"], function=self.resetPartSc) # Notein.poly defaults to 10
 
     def out(self):
         self.rev.out()
@@ -81,14 +76,8 @@ class Stop:
         for i in range(len(self.envs)):
             self.envs[i].setRelease(x[i])
         
-    def resetPartSc(self):
-        self.partSc.setTime = 0.2
-        self.partSc.value = self.partScRat
-        self.partSc.setTim = 5
-        self.partSc.value = 1
-        
-    def setPartScRat(self, x, y):
-        self.partScRat[1] = (x, y)
+    def setPartScEnv(self, x):
+        self.partScEnv[0] = (0, x)
         
     def setPart(self, x):
         for i in range(len(self.part)):
@@ -230,7 +219,8 @@ def bell():
     stop1.setEnvDec([4, 5, 3, .1, .3, 0.4, .04, 0.4, .4, 0.4, .4, 0.4, .4, 0.4, .4, 0.4, .4, 0.4, .4, 0.4])
     stop1.setEnvSus([.2, .1, .2, .1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .2, 0.2])
     stop1.setEnvRel([4]*20)
-    stop1.setPartScale(1.05)
+    #stop1.setPartSc(1.05)
+    stop1.setPartScEnv(1.32490)
 
 partList = list(range(1, 21, 1))
 transList = list(range(1, 21, 1))
@@ -305,11 +295,12 @@ def stateChanges(address, *args):
 
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
-stop1 = Stop(partList, 0, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], 0.001, 0.146, 0.70, 0.1, 0.4, 10, 1, transList, 0.02, 0, 0.01, 1.5).out()
+stop1 = Stop(partList, 1, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], 0.001, 0.146, 0.70, 0.1, 0.4, 10, 1, transList, 0.02, 0, 0.01, 1.5).out()
 
 #call = CallAfter(bell, time=1)
 voixHumaine()
-stop1.setPartScRat(4, 1.32490)
+bell()
+
 
 stopV = stop1.vel()
 dummy = Sig(0)
