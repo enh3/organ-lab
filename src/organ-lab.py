@@ -11,7 +11,7 @@ s.setMidiInputDevice(0)
 s.boot()
 
 class Stop:
-    def __init__(self, part, partScale, mul, att, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseMul, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index):
+    def __init__(self, part, partScRat, mul, att, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseMul, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index):
         # scale=1 to get pitch values in hertz
         self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
         self.note.keyboard()
@@ -30,7 +30,8 @@ class Stop:
         self.mixed = []
         self.trans = []
         self.velocity = [Clip(Sig(v), max=0.01, mul=100) for v in self.note['velocity']]
-        self.partScale = SigTo(1, time=10, init=partScale)
+        self.partScRat = Sig(partScRat)
+        self.partSc = SigTo(1, time=4, init=self.partScRat.value)
         self.noiseEnv = MidiAdsr(self.note['velocity'], attack=self.noiseAtt.value, decay=self.noiseDec.value, sustain=self.noiseSus.value, release=self.noiseRel.value)
         self.noise = PinkNoise(1.5) * self.noiseEnv
         self.noise = Reson(self.noise, freq=(self.note['pitch']*(20/4)), q=self.noiseFiltQ)
@@ -49,13 +50,13 @@ class Stop:
             self.envs.append(MidiAdsr(self.note['velocity'], attack=att[i], decay=0, sustain=1, release=rel[i], mul=self.amps[-1]))
             self.trans.append(SigTo(trans[i], time=0.025))
             self.part.append(SigTo(part[i], time=0.2))
-            self.snds.append(Sine(freq=(self.part[i]**self.partScale) * self.note['pitch'] + Randi(-rand, rand, 5) + self.trans[-1] + self.mod, mul=self.envs[-1]))
+            self.snds.append(Sine(freq=(self.part[i]**self.partSc) * self.note['pitch'] + Randi(-rand, rand, 5) + self.trans[-1] + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=1)
         self.sp = Spectrum(self.mix)
         self.filt = ButLP(self.mix+self.noise, 2000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
-        #self.tf = TrigFunc(self.note["trigon"], function=self.setPartScale, arg=list(range(10))) # Notein.poly defaults to 10
+        self.tf = TrigFunc(self.note["trigoff"], function=self.resetPartSc, arg=list(range(10))) # Notein.poly defaults to 10
 
     def out(self):
         self.rev.out()
@@ -77,9 +78,10 @@ class Stop:
         for i in range(len(self.envs)):
             self.envs[i].setRelease(x[i])
         
-    def setPartScale(self, x):
-        self.partScale.setSustain(1/x)
-        self.partScale.setMul(x)
+    def resetPartSc(self, x):
+        self.partSc.setTime(0)
+        self.partSc.value = 0
+        #self.partSc.value = self.partSc
         
     def setPart(self, x):
         for i in range(len(self.part)):
