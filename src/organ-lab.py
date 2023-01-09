@@ -18,6 +18,8 @@ class Stop:
         #self.partScRat = Sig(partScRat)
         self.ramp = Sig(ramp)
         self.fmMul = Sig(fmMul)
+        self.ratio = Sig(ratio)
+        self.index = Sig(index)
         self.noiseAtt = Sig(noiseAtt)
         self.noiseDec = Sig(noiseDec)
         self.noiseSus = Sig(noiseSus)
@@ -34,13 +36,13 @@ class Stop:
         self.partScEnv = [(0,partScRat), (2,1)]
         self.partSc = MidiLinseg(self.velocity, self.partScEnv)
         self.pp = Print(self.partSc, interval=0.3, message="Audio stream value")
-        self.noiseEnv = MidiAdsr(self.note['velocity'], attack=self.noiseAtt.value, decay=self.noiseDec.value, sustain=self.noiseSus.value, release=self.noiseRel.value)
+        self.noiseEnv = MidiAdsr(self.note['velocity'], attack=noiseAtt, decay=noiseDec, sustain=noiseSus, release=noiseRel)
         self.noise = PinkNoise(1.5) * self.noiseEnv
         self.noise = Reson(self.noise, freq=(self.note['pitch']*(20/4)), q=self.noiseFiltQ)
         self.noise = Mix(self.noise, 1, mul=self.noiseMul)
         self.fmEnv = MidiAdsr(self.note['trigon'], attack=0.001, decay=2, sustain=0.30, release=2)
-        self.fmod = self.note['pitch'] * ratio
-        self.amod = self.fmod * index
+        self.fmod = self.note['pitch'] * self.ratio
+        self.amod = self.fmod * self.index
         self.mod = Sine(self.fmod, mul=self.amod)
         # Handles the user polyphony independently to avoid mixed polyphony concerns (self.note already contains 10 streams)
         for i in range(len(part)):
@@ -53,7 +55,7 @@ class Stop:
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=1)
         self.sp = Spectrum(self.mix)
-        self.filt = ButLP(self.mix+self.noise, 2000)
+        self.filt = ButLP(self.mix + self.noise, 2000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
 
     def out(self):
@@ -100,20 +102,26 @@ class Stop:
     def setFmMul(self, x):
         self.fmMul.value = x
         
+    def setRatio(self, x):
+        self.ratio.value = x
+        
+    def setIndex(self, x):
+        self.index.value = x
+        
     def setNoiseAtt(self, x):
-        self.noiseAtt.value = x
+        self.noiseEnv.setAttack(x)
         
     def setNoiseDec(self, x):
-        self.noiseDec.value = x
+        self.noiseEnv.setDecay(x)
         
     def setNoiseSus(self, x):
-        self.noiseSus.value = x
+        self.noiseEnv.setSustain(x)
         
     def setNoiseRel(self, x):
-        self.noiseRel.value = x
+        self.noiseEnv.setRelease(x)
     
     def setNoiseMul(self, x):
-        self.noiseMul.value = x
+        self.noiseEnv.setMul(x)
         
     def setNoiseFiltQ(self, x):
         self.noiseFiltQ.value = x
@@ -210,6 +218,12 @@ def dissocie(x):
         
 def bell():
     stop1.setFmMul(1)
+    stop1.setRatio(0.43982735)
+    stop1.setIndex(2)
+    stop1.setEnvAtt([4]*20)
+    stop1.setEnvDec([0.1]*20)
+    stop1.setEnvSus([0.01]*20)
+    stop1.setEnvRel([0.1]*20)
     stop1.setNoiseAtt(0.001)
     stop1.setNoiseDec(0.1)
     stop1.setNoiseSus(0.01)
@@ -220,7 +234,7 @@ def bell():
     stop1.setEnvSus([.2, .1, .2, .1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .2, 0.2])
     stop1.setEnvRel([4]*20)
     #stop1.setPartSc(1.05)
-    stop1.setPartScEnv(1.32490)
+    stop1.setPartScEnv(1.01)
 
 partList = list(range(1, 21, 1))
 transList = list(range(1, 21, 1))
@@ -298,7 +312,7 @@ scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 stop1 = Stop(partList, 1, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], 0.001, 0.146, 0.70, 0.1, 0.4, 10, 1, transList, 0.02, 0, 0.01, 1.5).out()
 
 #call = CallAfter(bell, time=1)
-voixHumaine()
+#voixHumaine()
 bell()
 
 
