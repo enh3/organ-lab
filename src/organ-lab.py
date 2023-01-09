@@ -30,13 +30,16 @@ class Stop:
         self.mixed = []
         self.trans = []
         self.velocity = [Clip(Sig(v), max=0.01, mul=100) for v in self.note['velocity']]
-        self.partScRat = Sig(partScRat)
-        self.partSc = SigTo(1, time=4, init=self.partScRat.value)
+        self.partScRat = [(0,partScRat), (2,1)]
+        self.partSc = MidiLinseg(self.velocity, self.partScRat)
+        #self.partScRat = Sig(partScRat)
+        #self.partSc = SigTo(1, time=4, init=self.partScRat.value)
+        self.pp = Print(self.partSc, interval=0.3, message="Audio stream value")
         self.noiseEnv = MidiAdsr(self.note['velocity'], attack=self.noiseAtt.value, decay=self.noiseDec.value, sustain=self.noiseSus.value, release=self.noiseRel.value)
         self.noise = PinkNoise(1.5) * self.noiseEnv
         self.noise = Reson(self.noise, freq=(self.note['pitch']*(20/4)), q=self.noiseFiltQ)
         self.noise = Mix(self.noise, 1, mul=self.noiseMul)
-        self.fmEnv = MidiAdsr(self.note['velocity'], attack=0.001, decay=2, sustain=0.30, release=2)
+        self.fmEnv = MidiAdsr(self.note['trigon'], attack=0.001, decay=2, sustain=0.30, release=2)
         #self.fm1 = FM(carrier=self.note['pitch']*4, ratio=0.43982735, index=2.11232, mul=self.fmEnv)
         #self.fm2 = FM(carrier=self.fm1, ratio=0.72348, index=1.376, mul=self.fmEnv)
         self.fmod = self.note['pitch'] * ratio
@@ -56,7 +59,7 @@ class Stop:
         self.sp = Spectrum(self.mix)
         self.filt = ButLP(self.mix+self.noise, 2000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
-        self.tf = TrigFunc(self.note["trigoff"], function=self.resetPartSc, arg=list(range(10))) # Notein.poly defaults to 10
+        #self.tf = TrigFunc(self.note["trigon"], function=self.resetPartSc) # Notein.poly defaults to 10
 
     def out(self):
         self.rev.out()
@@ -78,10 +81,14 @@ class Stop:
         for i in range(len(self.envs)):
             self.envs[i].setRelease(x[i])
         
-    def resetPartSc(self, x):
-        self.partSc.setTime(0)
-        self.partSc.value = 0
-        #self.partSc.value = self.partSc
+    def resetPartSc(self):
+        self.partSc.setTime = 0.2
+        self.partSc.value = self.partScRat
+        self.partSc.setTim = 5
+        self.partSc.value = 1
+        
+    def setPartScRat(self, x, y):
+        self.partScRat[1] = (x, y)
         
     def setPart(self, x):
         for i in range(len(self.part)):
@@ -122,6 +129,7 @@ class Stop:
     def setNoiseFiltQ(self, x):
         self.noiseFiltQ.value = x
 
+        
 def bourdon():
     stop1.setMul([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
     stop1.setEnvAtt([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
@@ -301,6 +309,7 @@ stop1 = Stop(partList, 0, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003,
 
 #call = CallAfter(bell, time=1)
 voixHumaine()
+stop1.setPartScRat(4, 1.32490)
 
 stopV = stop1.vel()
 dummy = Sig(0)
