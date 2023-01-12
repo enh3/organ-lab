@@ -60,13 +60,13 @@ class Stop:
             self.envs.append(MidiAdsr(self.note['velocity'], attack=att[i], decay=dec[i], sustain=sus[i], release=rel[i], mul=self.amps[-1]))
             self.trans.append(SigTo(trans[i], time=0.025))
             self.part.append(SigTo(part[i], time=0.2))
-            self.snds.append(Sine(freq=(self.part[i]**self.partSc) * self.note['pitch'] + Randi(-rand, rand, 5) + self.trans[-1] + self.mod, mul=self.envs[-1]))
+            self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch'])-0.4)) + Randi(-rand, rand, 5) + self.trans[-1] + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=1)
         self.sp = Spectrum(self.mix)
         self.filt = ButLP(self.mix+self.noise, 2000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
-        #self.pp = Print(self.att, interval=2, message="Audio stream value")
+        #self.pp = Print(self.dec, interval=2, message="Audio stream value")
         
     def out(self):
         self.rev.out()
@@ -78,20 +78,22 @@ class Stop:
     def setEnvAtt(self, x):
         for i in range(len(self.envs)):
             self.envs[i].setAttack(x[i])
-        print(self.envs[0].attack)
+        print('att', self.envs[0].attack)
             
     def setEnvDec(self, x):
         for i in range(len(self.envs)):
             self.envs[i].setDecay(x[i])
+        print('dec', self.envs[0].decay)
             
     def setEnvSus(self, x):
         for i in range(len(self.envs)):
             self.envs[i].setSustain(x[i])
+        print('sus', self.envs[0].sustain)
             
     def setEnvRel(self, x):
         for i in range(len(self.envs)):
             self.envs[i].setRelease(x[i])
-        print('release', self.envs[0].release)
+            print('rel', self.envs[i].release)
             
     def setMul(self, x):
         for i in range(len(self.amps)):
@@ -141,6 +143,7 @@ class Stop:
     def setNoiseFiltQ(self, x):
         self.noiseFiltQ.value = x
 
+
 stop1 = Stop(partList, 1, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], ([0.9]*20), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], 0.001, 0.146, 0.70, 0.1, 0.4, 10, 1, transList, 0.02, 0, 0.0, 1.5, 0).out()
 
 def bourdon():
@@ -168,7 +171,7 @@ def principal():
     print(principal)
     
 def voixHumaine():
-    stop1.setMul([0.1, 0.2, 0.3, 0.3, 0.7, 0.5, 0.04, 0.2, 0.04, 0.3, 0.003, 0.003, 0.003, 0.002, 0.1, 0.001, 0.001, 0, 0, 0.002])
+    stop1.setMul([0.3, 0.9, 0.9, 0.9, 0.7, 0.9, 0.9, 0.01, 0.04, 0.3, 0.003, 0.003, 0.003, 0.002, 0.1, 0.001, 0.001, 0, 0, 0.002])
     stop1.setEnvAtt([0.2, 0.3, 0.2, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
     stop1.setEnvDec([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
     stop1.setEnvSus([1]*20)
@@ -253,10 +256,10 @@ bellCall4 = None
 
 def bell():
     global bellCall1, bellCall2, bellCall3, bellCall4 
-    bellCall1 = CallAfter(stop1.setEnvAtt, time=90, arg=(.1, .1, .1, .1, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01)).play()
-    bellCall2 = CallAfter(stop1.setEnvDec, time=90, arg=(4, 5, 2, .1, .3, 0.4, .04, 0.4, .4, 0.4, .4, 0.4, .4, 0.4, .4, 0.4, .4, 0.4, .4, 0.4)).play()
-    bellCall3 = CallAfter(stop1.setEnvSus, time=90, arg=(.2, .1, .2, .1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .01, 0.1, .2, 0.2)).play()
-    bellCall4 = CallAfter(stop1.setEnvRel, time=90, arg=(4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4)).play()
+    bellCall1 = CallAfter(stop1.setEnvAtt, time=60, arg=(.001, .001, .001, .001, 0.001, 0.001, 0.0001, 0.0006, 0.0007, 0.0005, 0.0006, 0.0003, 0.0005, 0.0003, 0.0006, 0.0005, 0.0004, 0.0002, 0.0001, 0.0001)).play()
+    bellCall2 = CallAfter(stop1.setEnvDec, time=60, arg=(1.3, .05, .02, 4, 4, 0.04, .004, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04)).play()
+    bellCall3 = CallAfter(stop1.setEnvSus, time=60, arg=(.2, .1, .02, .01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .002, 0.002)).play()
+    bellCall4 = CallAfter(stop1.setEnvRel, time=60, arg=(2, 0.1, 0.1, .01, .03, 0.4, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.4, .04, 0.04, .04, 0.4)).play()
     stop1.setMul([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
     stop1.setRatio(0.43982735)
     stop1.setIndex(4)
@@ -264,8 +267,8 @@ def bell():
     stop1.setNoiseDec(0.1)
     stop1.setNoiseSus(0.01)
     stop1.setNoiseRel(0.1)    
-    stop1.setNoiseMul(0.6)
-    stop1.setNoiseFiltQ(5)
+    stop1.setNoiseMul(2)
+    stop1.setNoiseFiltQ(4)
     #stop1.setPartSc(1.05)
     stop1.setPartScRat(1.01)
     print(bell)
@@ -287,9 +290,12 @@ def setInterpol(x):
     stop1.setInter(x)
     
 def autom():
-    x = Linseg([(0.0000,0.0000),(1.4852,1.3265),(2.4326,2.8916),(3.0042,5.0510),(4.0000,10.0000)])
-    x.play(delay=20).graph()
+    x = Linseg([(0,0),(80,0.01)])
+    y = Linseg([(0,0),(80,5)])
+    x.play(delay=0).graph()
+    y.play(delay=0).graph()
     stop1.setRatio(x)
+    stop1.setIndex(y)
 
 i = 0
 
@@ -368,13 +374,15 @@ voixHumaine()
 #setInterpol(100)
 #stop1.setRamp(100)
 #call1 = CallAfter(bourdon, time=4)
-call1 = CallAfter(setInterpol, time=40, arg=100)
-call2 = CallAfter(stop1.setRamp, time=40, arg=100)
-call3 = CallAfter(bell, time=90)
+autom()
+call1 = CallAfter(setInterpol, time=90, arg=60)
+call2 = CallAfter(stop1.setRamp, time=90, arg=60)
+call3 = CallAfter(bell, time=100)
 #bell()
 #randPartP.play()
-#autom()
 #call1 = CallAfter(stop1.setEnvAtt, time=4, arg=(.1, .1, .1, .1, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01))
+
+#call3 = CallAfter(stop1.setEnvAtt, time=4, arg=(5, .1, .1, .1, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01))
 
 
 stopV = stop1.vel()
