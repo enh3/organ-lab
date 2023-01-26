@@ -5,7 +5,7 @@ from random import random
 #pa_list_devices()
 pm_list_devices()
 s = Server()
-s.setOutputDevice(2)
+s.setOutputDevice(1)
 #s.setMidiOutputDevice(1)
 s.setMidiInputDevice(99)
 s.boot()
@@ -66,7 +66,8 @@ class Stop:
         self.sp = Spectrum(self.mix)
         self.filt = ButLP(self.mix+self.noise, 2000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
-        #self.pp = Print(self.dec, interval=2, message="Audio stream value")
+        #self.pp = Print(self.att, interval=2, message="Audio stream value")
+        
         
     def out(self):
         self.rev.out()
@@ -77,8 +78,10 @@ class Stop:
         
     def setEnvAtt(self, x):
         for i in range(len(self.envs)):
-            self.envs[i].setAttack(x[i])
-        print('att', self.envs[0].attack)
+            self.att[i].value = x[i]
+            print(self.att[i])
+            self.envs[i].setAttack(self.att[i])
+        #print('att', self.envs[0].attack)
             
     def setEnvDec(self, x):
         for i in range(len(self.envs)):
@@ -329,7 +332,6 @@ def stateChanges(address, *args):
         stop1.setRamp(10)
         call2 = CallAfter(bell, time=4)
         #randMulP.play(delay=5)
-        
     #4e Elegie - Vous, Arbres de la Vie
     elif i == 4:
         print('4e Elegie - Vous, Arbres de la Vie')
@@ -370,19 +372,32 @@ def stateChanges(address, *args):
 
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
-voixHumaine()
-#setInterpol(100)
+#voixHumaine()
+setInterpol(100)
 #stop1.setRamp(100)
 #call1 = CallAfter(bourdon, time=4)
-autom()
-call1 = CallAfter(setInterpol, time=90, arg=60)
-call2 = CallAfter(stop1.setRamp, time=90, arg=60)
-call3 = CallAfter(bell, time=100)
+#autom()
+#call1 = CallAfter(setInterpol, time=90, arg=60)
+#call2 = CallAfter(stop1.setRamp, time=90, arg=60)
+#call3 = CallAfter(bell, time=100)
 #bell()
 #randPartP.play()
 #call1 = CallAfter(stop1.setEnvAtt, time=4, arg=(.1, .1, .1, .1, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01))
 
-#call3 = CallAfter(stop1.setEnvAtt, time=4, arg=(5, .1, .1, .1, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01))
+call3 = CallAfter(stop1.setEnvAtt, time=4, arg=(5, .1, .1, .1, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01))
+
+listTest = list(range(1, 20, 1))
+
+autEnv = []
+def automEnv(x):
+    global autEnv
+    for i in listTest:
+        autEnv = Linseg([(0,0),(10,x[i])])
+    autEnv.play()
+    stop1.setEnvAtt(autEnv)
+
+#stop1.setEnvAtt([0.1, .1, .1, .1, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
+#automEnv([20, .1, .1, .1, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
 
 
 stopV = stop1.vel()
