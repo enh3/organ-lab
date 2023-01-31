@@ -65,7 +65,7 @@ class Stop:
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=1)
         self.filt = ButLP(self.mix+self.noise, 2000)
-        self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15)
+        self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15).mix(2)
         self.sp = Spectrum(self.rev, 8192)
         #self.pp = Print(self.att, interval=2, message="Audio stream value")
         
@@ -333,7 +333,7 @@ def stateChanges(address, *args):
         voixHumaine()
     #4 Cornet
     elif i == 4:
-        cornet()
+        principal()
         glissContP.play()
     #5 Gliss
     elif i == 5:
