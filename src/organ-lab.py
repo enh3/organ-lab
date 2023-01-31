@@ -1,6 +1,7 @@
 from pyo import *
 from s047_midi_sustain_and_polyphony import NoteinSustain
 from random import random
+from random import randint
 
 pa_list_devices()
 #pm_list_devices()
@@ -79,22 +80,18 @@ class Stop:
     def setEnvAtt(self, x):
         for i in range(len(self.envs)):
             self.envs[i].setAttack(x[i])
-        print('dec', self.envs[0].attack)
             
     def setEnvDec(self, x):
         for i in range(len(self.envs)):
             self.envs[i].setDecay(x[i])
-        print('dec', self.envs[0].decay)
             
     def setEnvSus(self, x):
         for i in range(len(self.envs)):
             self.envs[i].setSustain(x[i])
-        print('sus', self.envs[0].sustain)
             
     def setEnvRel(self, x):
         for i in range(len(self.envs)):
             self.envs[i].setRelease(x[i])
-            print('rel', self.envs[i].release)
             
     def setMul(self, x):
         for i in range(len(self.amps)):
@@ -227,6 +224,8 @@ def glissCont():
     else:
         for i in range(len(glissC)):
             glissC[i] = 0
+    print("0", glissC[0])
+    print("1", glissC[1])
             
 def transReset():
     global glissC
@@ -257,10 +256,10 @@ bellCall4 = None
 
 def bell():
     global bellCall1, bellCall2, bellCall3, bellCall4 
-    bellCall1 = CallAfter(stop1.setEnvAtt, time=30, arg=(.001, .001, .001, .001, 0.001, 0.001, 0.0001, 0.0006, 0.0007, 0.0005, 0.0006, 0.0003, 0.0005, 0.0003, 0.0006, 0.0005, 0.0004, 0.0002, 0.0001, 0.0001)).play()
-    bellCall2 = CallAfter(stop1.setEnvDec, time=30, arg=(1.3, .05, .02, 0, 0, 0.04, .004, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04)).play()
-    bellCall3 = CallAfter(stop1.setEnvSus, time=30, arg=(.4, .1, .02, .01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .002, 0.002)).play()
-    bellCall4 = CallAfter(stop1.setEnvRel, time=30, arg=(2, 0.1, 0.1, .01, .03, 0.4, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.4, .04, 0.04, .04, 0.4)).play()
+    bellCall1 = CallAfter(stop1.setEnvAtt, time=15, arg=(.001, .001, .001, .001, 0.001, 0.001, 0.0001, 0.0006, 0.0007, 0.0005, 0.0006, 0.0003, 0.0005, 0.0003, 0.0006, 0.0005, 0.0004, 0.0002, 0.0001, 0.0001)).play()
+    bellCall2 = CallAfter(stop1.setEnvDec, time=15, arg=(1.3, .05, .02, 0, 0, 0.04, .004, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04)).play()
+    bellCall3 = CallAfter(stop1.setEnvSus, time=15, arg=(.4, .1, .02, .01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .002, 0.002)).play()
+    bellCall4 = CallAfter(stop1.setEnvRel, time=15, arg=(2, 0.1, 0.1, .01, .03, 0.4, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.4, .04, 0.04, .04, 0.4)).play()
     stop1.setMul([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
     stop1.setRatio(0.43982735)
     stop1.setIndex(4)
@@ -299,7 +298,8 @@ def autom3():
     stop1.setIndex(y)
     
 def stopInter():
-    x = random.randint(0, 3)
+    x = randint(0, 3)
+    print(x)
     if x == 0:
         bourdon()
     elif x == 1:
@@ -322,65 +322,84 @@ def stateChanges(address, *args):
     elif address == "/return" and args[0] == 1:
         i -= 1
         print(i)
-    #1e Elegie - Qui si je criais
+    #1 Bourdon
     if i == 1:
-        print('1e Elegie - Qui si je criais')
+        bourdon()
+    #2 Principal
+    elif i == 2:
+        principal()
+    #3 Voix
+    elif i == 3:
+        voixHumaine()
+    #4 Cornet
+    elif i == 4:
+        cornet()
+        glissContP.play()
+    #5 Gliss
+    elif i == 5:
+        print('Glissandi')
         bourdon()
         glissUpP.play()
-    #2e Elegie - Tout Ange est terrible
-    elif i == 2:
-        print('2e Elegie - Tout Ange est terrible')
+    #6 Stop interp
+    elif i == 6:
+        print('Interpolation de jeux')
         glissUpP.stop()
         transReset()
+        stop1.setRatio(0)
+        stop1.setIndex(1)
+        bourdon()
+        stop1.setRamp(5)
+        stopInterP.play()
+    #7 Bell interp
+    elif i == 7:
+        print('Interpolation de cloche')
+        stopInterP.stop()
+        voixHumaine()
+        setInterpol(15)
+        stop1.setRamp(15)
+        call2 = CallAfter(bell, time=5)
+    #8 Enveloppe
+    elif i == 8:
+        print('Enveloppe dynamique')
+        glissUpP.stop()
         principal()
         stop1.setEnvAtt([3, 2, 1, 2, 3, 2, 1, 2, 3, 2, 1, 4, 2, 1, 4, 2, 5, 3, 6, 2])
         stop1.setEnvRel([1, 2, 3, 2, 1, 2, 3, 2, 1, 2, 3, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
         stop1.setNoiseAtt(4)
-    #3e Elegie - Chanter l'Amante est une chose
-    elif i == 3:
-        print('3e Elegie - Chanter lAmante est une chose')
-        voixHumaine()
-        setInterpol(30)
-        stop1.setRamp(30)
-        call2 = CallAfter(bell, time=5)
-        #randMulP.play(delay=5)
-    #4e Elegie - Vous, Arbres de la Vie
-    elif i == 4:
-        print('4e Elegie - Vous, Arbres de la Vie')
-        #setRamp(5)
-        cornet()
-        glissCont()
-    #5e Elegie - Mais les errants dis-moi
-    elif i == 5:
-        print('5e Elegie - Mais les errants dis-moi')
-        stop1.setRamp(5)
-        #principal()
-    #6e Elegie - Figuier, depuis longtemps déjà
-    elif i == 6:
-        print('6e Elegie - Figuier, depuis longtemps déjà')
-        voixHumaine()
-    #7e Elegie - Non, plus d’imploration
-    elif i == 7:
+    #9 Aléatoire
+    elif i == 9:
+        print('Aléatoire')
+        randMulP.start()
+    #10 Dissocié
+    elif i == 10:
+        print('Dissocié')
+        randMulP.stop()
+        bourdon()
+        dissP.play()
+    #10e Elegie - Vienne le jour enfin
+    elif i == 11:
         print('7e Elegie - Non, plus d’imploration')
         randMulP.stop()
         setRamp(5)
         cornet()
-    #8e Elegie - A pleins regardes, la créature
-    elif i == 8:
+    #10e Elegie - Vienne le jour enfin
+    elif i == 12:
+        print('7e Elegie - Non, plus d’imploration')
+        randMulP.stop()
+        setRamp(5)
+        cornet()
+    #10e Elegie - Vienne le jour enfin
+    elif i == 13:
         print('8e Elegie - A pleins regardes, la créature')
         glissUpP.stop()
         setRamp(0.02)
         randMulP.play()
-    #9e Elegie - Pourquoi, s’il est loisible aussi bien
-    elif i == 9:
+    #10e Elegie - Vienne le jour enfin
+    elif i == 14:
         print('9e Elegie - Pourquoi, s’il est loisible aussi bien')
         randMulP.stop()
         glissContP.play()
-    #10e Elegie - Vienne le jour enfin
-    elif i == 10:
-        print('10e Elegie - Vienne le jour enfin')
-        glissContP.stop()
-        trigDiss.setThreshold(0)
+        
 
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
@@ -423,7 +442,7 @@ dissP = Pattern(function=dissocie, time=0.5)
 babP = Pattern(function=bourdonAndBell, time=0.2, arg=0.2)
 tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
 glissContP = Pattern(function=glissCont, time=0.1)
-stopInterP = Pattern(function=glissCont, time=Randi(1, 5, 1))
+stopInterP = Pattern(function=stopInter, time=Randi(5, 10, 1))
 
 # Generates an audio ramp from 36 to 84, from
 # which MIDI pitches will be extracted.
@@ -464,7 +483,7 @@ s.amp = 0.3
 
 s.start()
 
-path = os.path.join(os.path.expanduser("~"), "Desktop", "cornetGlissCont.wav")
+path = os.path.join(os.path.expanduser("~"), "Desktop", "pretty2.wav")
 # Record for 10 seconds a 24-bit wav file.
 s.recordOptions(filename=path, fileformat=0, sampletype=1)
 
