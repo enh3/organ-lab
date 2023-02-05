@@ -64,7 +64,7 @@ class Stop:
             self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch'])-0.4)) + Randi(-rand, rand, 5) + self.trans[-1] + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=1)
-        self.filt = ButLP(self.mix+self.noise, 2000)
+        self.filt = ButLP(self.mix+self.noise, 20000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15).mix(2)
         self.sp = Spectrum(self.rev, 8192)
         #self.pp = Print(self.att, interval=2, message="Audio stream value")
@@ -442,7 +442,7 @@ dissP = Pattern(function=dissocie, time=0.5)
 babP = Pattern(function=bourdonAndBell, time=0.2, arg=0.2)
 tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
 glissContP = Pattern(function=glissCont, time=0.1)
-stopInterP = Pattern(function=stopInter, time=Randi(5, 10, 1))
+stopInterP = Pattern(function=stopInter, time=randint(5, 10))
 
 # Generates an audio ramp from 36 to 84, from
 # which MIDI pitches will be extracted.
