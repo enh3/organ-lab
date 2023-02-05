@@ -297,8 +297,11 @@ def autom3():
     stop1.setRatio(x)
     stop1.setIndex(y)
     
+stopInterPRand = Sig(1)
 def stopInter():
+    global stopInterPRand
     x = randint(0, 3)
+    stopInterPRand.value = randint(1, 10)
     print(x)
     if x == 0:
         bourdon()
@@ -308,6 +311,7 @@ def stopInter():
         voixHumaine()
     elif x == 3:
         cornet()
+    print('stopInter', stopInterPRand)
 
 i = 0
 
@@ -442,7 +446,9 @@ dissP = Pattern(function=dissocie, time=0.5)
 babP = Pattern(function=bourdonAndBell, time=0.2, arg=0.2)
 tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
 glissContP = Pattern(function=glissCont, time=0.1)
-stopInterP = Pattern(function=stopInter, time=randint(5, 10))
+stopInterP = Pattern(function=stopInter, time=Sig(stopInterPRand))
+
+stopInterP.play()
 
 # Generates an audio ramp from 36 to 84, from
 # which MIDI pitches will be extracted.
