@@ -6,7 +6,7 @@ from random import randint
 pa_list_devices()
 #pm_list_devices()
 s = Server()
-s.setOutputDevice(1)
+s.setOutputDevice(2)
 #s.setMidiOutputDevice(1)
 s.setMidiInputDevice(99)
 s.boot()
@@ -61,7 +61,7 @@ class Stop:
             self.envs.append(MidiAdsr(self.note['velocity'], attack=att[i], decay=dec[i], sustain=sus[i], release=rel[i], mul=self.amps[-1]))
             self.trans.append(SigTo(trans[i], time=0.025))
             self.part.append(SigTo(part[i], time=0.2))
-            self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch'])-0.4)) + Randi(-rand, rand, 5) + self.trans[-1] + self.mod, mul=self.envs[-1]))
+            self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch'])-0)) + Randi(-rand, rand, 5) + self.trans[-1] + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=1)
         self.filt = ButLP(self.mix+self.noise, 20000)
@@ -448,7 +448,7 @@ tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
 glissContP = Pattern(function=glissCont, time=0.1)
 stopInterP = Pattern(function=stopInter, time=Sig(stopInterPRand))
 
-stopInterP.play()
+#stopInterP.play()
 
 # Generates an audio ramp from 36 to 84, from
 # which MIDI pitches will be extracted.
