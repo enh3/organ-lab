@@ -61,7 +61,7 @@ class Stop:
             self.envs.append(MidiAdsr(self.note['velocity'], attack=att[i], decay=dec[i], sustain=sus[i], release=rel[i], mul=self.amps[-1]))
             self.trans.append(SigTo(trans[i], time=0.025))
             self.part.append(SigTo(part[i], time=0.2))
-            self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch'])-0)) + Randi(-rand, rand, 5) + self.trans[-1] + self.mod, mul=self.envs[-1]))
+            self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch'])-0.15)) + Randi(-rand, rand, 5) + self.trans[-1] + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=1)
         self.filt = ButLP(self.mix+self.noise, 20000)
@@ -338,7 +338,7 @@ def stateChanges(address, *args):
     #4 Cornet
     elif i == 4:
         principal()
-        glissContP.play()
+        #glissContP.play()
     #5 Gliss
     elif i == 5:
         print('Glissandi')
