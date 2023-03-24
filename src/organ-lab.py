@@ -4,21 +4,23 @@ from random import random
 from random import randint
 
 pa_list_devices()
-#pm_list_devices()
+pm_list_devices()
 s = Server()
-s.setOutputDevice(1)
-#s.setMidiOutputDevice(1)
+s.setOutputDevice(2)
+s.setMidiOutputDevice(5)
 s.setMidiInputDevice(99)
 s.boot()
 
-partList = list(range(1, 21, 1))
-transList = list(range(1, 21, 1))
+partList = list(range(1, 8, 1))
+transList = list(range(1, 8, 1))
+open = 36
+closed = 38
 
 class Stop:
-    def __init__(self, tMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseMul, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter):
+    def __init__(self, tMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseMul, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans, sumMul):
         # scale=1 to get pitch values in hertz
-        self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
-        self.note.keyboard()
+        self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
+        #self.note.keyboard()
         #self.partScRat = Sig(partScRat)
         self.ramp = Sig(ramp)
         self.inter = Sig(inter)
@@ -30,6 +32,9 @@ class Stop:
         self.noiseRel = SigTo(noiseRel, self.inter)
         self.noiseMul = SigTo(noiseMul, self.inter)
         self.noiseFiltQ = SigTo(noiseFiltQ, self.inter)
+        self.sumRat = SigTo(sumRat, self.inter)
+        self.sumTrans = SigTo(sumTrans, self.inter)
+        self.sumMul = SigTo(sumMul, self.inter)
         self.amps = []
         self.att = []
         self.dec = []
@@ -51,6 +56,9 @@ class Stop:
         self.fmod = self.note['pitch'] * self.ratio
         self.amod = self.fmod * self.index
         self.mod = Sine(self.fmod, mul=self.amod)
+        #self.harmT = HarmTable([0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
+        #self.harmOsc = Osc(table=self.harmT, freq=10**self.partSc) * (MToF(FToM(self.note['pitch'])-0.15)) + Randi(-rand, rand, 5) + self.trans[-1] + self.mod
+        self.sum = SumOsc(freq=(MToF(FToM(self.note['pitch'])-0.15+self.sumTrans)), ratio=self.sumRat, index=0.75, mul=self.noiseEnv*self.sumMul)
         # Handles the user polyphony independently to avoid mixed polyphony concerns (self.note already contains 10 streams)
         for i in range(len(part)):
             # SigTo to avoid clicks
@@ -65,9 +73,9 @@ class Stop:
             self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch'])-0.15)) + Randi(-rand, rand, 5) + self.trans[-1] + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=tMul)
-        self.filt = ButLP(self.mix+self.noise+self.wind, 20000)
+        self.filt = ButLP(self.mixed+self.sum+self.noise, 5000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15).mix(2)
-        self.sp = Spectrum(self.rev, 8192)
+        self.sp = Spectrum(self.rev.mix(1), 8192)
         #self.pp = Print(self.att, interval=2, message="Audio stream value")
         
     def out(self):
@@ -142,7 +150,7 @@ class Stop:
         self.noiseFiltQ.value = x
 
 
-stop1 = Stop(0, partList, 1, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], ([0.9]*20), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], 0.001, 0.146, 0.70, 0.1, 0.0, 10, 1, transList, 0.02, 0, 0.0, 1.5, 0).out()
+stop1 = Stop(1, partList, 1, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.70, 0.1, 0.1, 10, 1, transList, 0.02, 0, 0.0, 1.5, 0, 0.25, closed, 0.005).out()
 
 def bourdon():
     stop1.setMul([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
@@ -435,6 +443,7 @@ def automEnv(x):
 #automEnv([20, .1, .1, .1, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
 
 
+
 stopV = stop1.vel()
 dummy = Sig(0)
 trigDiss = Thresh(stop1.vel(), threshold=100, dir=0)
@@ -448,7 +457,13 @@ tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
 glissContP = Pattern(function=glissCont, time=0.1)
 stopInterP = Pattern(function=stopInter, time=Sig(stopInterPRand))
 
-#stopInterP.play()
+
+stop1.setRamp(5)
+stopInterP.play()
+#principal()
+
+#glissUpP.play()
+#voixHumaine()
 
 # Generates an audio ramp from 36 to 84, from
 # which MIDI pitches will be extracted.
@@ -485,7 +500,7 @@ def midi_event():
 pat = Pattern(midi_event, 0.5).play()
 """
 
-s.amp = 0.05
+s.amp = 0.1
 
 s.start()
 
