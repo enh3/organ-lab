@@ -4,19 +4,29 @@ from random import random
 from random import randint
 
 pa_list_devices()
-#pm_list_devices()
+pm_list_devices()
 s = Server()
-s.setOutputDevice(2)
-#s.setMidiOutputDevice(1)
+s.setOutputDevice(1)
+s.setMidiOutputDevice(5)
 s.setMidiInputDevice(99)
 s.boot()
 
-partList = list(range(1, 21, 1))
-transList = list(range(1, 21, 1))
+partList = list(range(1, 8, 1))
+transList = list(range(1, 8, 1))
+open = 36
+closed = 38
+
+path = "/Users/kjel/Documents/Ableton/Enregistrement_dorgue Project/Fichiers" + "2023-03-07_brdn_pres_avecBruit_chr_mono.wav"
+
+# stereo playback with a slight shift between the two channels.
+sf = SfPlayer("/Users/kjel/Documents/Ableton/Enregistrement_dorgue Project/Fichiers/2023-03-07_brdn_pres_avecBruit_chr_mono-re-boucle-plus.wav", speed=[1, 1], loop=True, mul=1).out()
+
+sfSpec = Spectrum(sf, size=8192)
 
 class Stop:
-    def __init__(self, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseMul, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter):
+    def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans):
         # scale=1 to get pitch values in hertz
+        #self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
         self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
         self.note.keyboard()
         #self.partScRat = Sig(partScRat)
@@ -30,6 +40,10 @@ class Stop:
         self.noiseRel = SigTo(noiseRel, self.inter)
         self.noiseMul = SigTo(noiseMul, self.inter)
         self.noiseFiltQ = SigTo(noiseFiltQ, self.inter)
+        self.sumRat = SigTo(sumRat, self.inter)
+        self.sumTrans = SigTo(sumTrans, self.inter)
+        self.sumMul = SigTo(sumMul, self.inter)
+        self.trans = SigTo(trans, self.inter)
         self.amps = []
         self.att = []
         self.dec = []
@@ -39,7 +53,6 @@ class Stop:
         self.part = []
         self.snds = []
         self.mixed = []
-        self.trans = []
         self.velocity = [Clip(Sig(v), max=0.01, mul=100) for v in self.note['velocity']]
         self.partScEnv = [(0,partScRat), (2,1)]
         self.partSc = MidiLinseg(self.velocity, self.partScEnv)
@@ -47,9 +60,13 @@ class Stop:
         self.noise = PinkNoise(1.5) * self.noiseEnv
         self.noise = Reson(self.noise, freq=(self.note['pitch']*(20/4)), q=self.noiseFiltQ)
         self.noise = Mix(self.noise, 1, mul=self.noiseMul)
+        self.wind = PinkNoise(0.01)
         self.fmod = self.note['pitch'] * self.ratio
         self.amod = self.fmod * self.index
         self.mod = Sine(self.fmod, mul=self.amod)
+        #self.harmT = HarmTable([0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
+        #self.harmOsc = Osc(table=self.harmT, freq=10**self.partSc) * (MToF(FToM(self.note['pitch'])-0.15)) + Randi(-rand, rand, 5) + self.trans[-1] + self.mod
+        self.sum = SumOsc(freq=(MToF(FToM(self.note['pitch'])-0.15+self.sumTrans) + self.trans), ratio=self.sumRat, index=0.75, mul=self.noiseEnv*self.sumMul)
         # Handles the user polyphony independently to avoid mixed polyphony concerns (self.note already contains 10 streams)
         for i in range(len(part)):
             # SigTo to avoid clicks
@@ -59,16 +76,15 @@ class Stop:
             self.sus.append(SigTo(sus[i], time=self.inter))
             self.rel.append(SigTo(rel[i], time=self.inter))
             self.envs.append(MidiAdsr(self.note['velocity'], attack=att[i], decay=dec[i], sustain=sus[i], release=rel[i], mul=self.amps[-1]))
-            self.trans.append(SigTo(trans[i], time=0.025))
+            #self.trans.append(SigTo(trans, time=0.025))
             self.part.append(SigTo(part[i], time=0.2))
-            self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch'])-0.15)) + Randi(-rand, rand, 5) + self.trans[-1] + self.mod, mul=self.envs[-1]))
+            self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch'])-0.15)) + Randi(-rand, rand, 5) + self.trans + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
-        self.mix = Mix(self.mixed, 2, mul=1)
-        self.filt = ButLP(self.mix+self.noise, 20000)
-        self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15).mix(2)
-        #self.sp = Spectrum(self.rev, 8192)
+        self.mix = Mix(self.mixed, 2, mul=mMul)
+        self.filt = ButLP(self.mix+self.sum+self.noise, 5000)
+        self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15, mul=tMul).mix(2)
+        self.sp = Spectrum(self.rev.mix(1), size=8192)
         #self.pp = Print(self.att, interval=2, message="Audio stream value")
-        
         
     def out(self):
         self.rev.out()
@@ -105,8 +121,7 @@ class Stop:
             self.part[i].value = x[i]
             
     def setTrans(self, x):
-        for i in range(len(self.trans)):
-            self.trans[i].value = x[i]
+        self.trans.value = x
             
     def setRamp(self, x):
         self.ramp.value = x
@@ -141,11 +156,12 @@ class Stop:
     def setNoiseFiltQ(self, x):
         self.noiseFiltQ.value = x
 
+#self, tMul, sMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans
 
-stop1 = Stop(partList, 1, [1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], ([0.9]*20), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01], 0.001, 0.146, 0.70, 0.1, 0.3, 10, 1, transList, 0.02, 0, 0.0, 1.5, 0).out()
+stop1 = Stop(0.07, 1, 0.01, 0.005, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.70, 0.1, 10, 1, 0, 0.02, 0, 0.0, 1.5, 0, 0.25, closed).out()
 
 def bourdon():
-    stop1.setMul([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
+    stop1.setMul([1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0])
     stop1.setEnvAtt([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
     stop1.setEnvDec([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
     stop1.setEnvSus([0.9]*20)
@@ -196,7 +212,7 @@ def randMul():
 def setRamp(x):
     stop1.setRamp(x)
     
-glissC = [0 for i in range(21)]
+glissC = [0 for i in range(8)]
 
 def glissUp():
     global glissC
@@ -209,6 +225,23 @@ def glissUp():
     else:
         for i in range(len(glissC)):
             glissC[i] = 0
+
+glissUpC = None
+def glissUp2():
+    x = Linseg([(0,0),(90,600)])
+    x.play(delay=0).graph()
+    stop1.setTrans(x)
+    print("gliss2")
+    
+glissC3 = 0
+def glissUp3():
+    global glissC3
+    glissC3 == 0
+    if glissC3 < 600:
+        stop1.setTrans(glissC3)
+        glissC3 = glissC3 + 0.2
+    else:
+        glissC3 = 0
     
 def glissCont():
     global glissC
@@ -315,37 +348,41 @@ def stopInter():
 
 i = 0
 
-call = None
+call1 = None
 call2 = None
 
 def stateChanges(address, *args):
-    global i, stopV, call, call2
+    global i, stopV, call1, call2
+    print(address)
+    print(args)
     if address == "/continue" and args[0] == 1:
         i += 1
         print(i)
     elif address == "/return" and args[0] == 1:
         i -= 1
         print(i)
-    #1 Bourdon
+    #1e Élégie
     if i == 1:
-        bourdon()
+        print('Glissandi')
+        glissUpP3.play()
     #2 Principal
     elif i == 2:
+        print('Enveloppe dynamique')
+        glissUpP3.stop()
         principal()
+        stop1.setEnvAtt([0.1, 0.3, 0.1, 0.2, 0.3, 0.2, 0.1, 0.2])
+        stop1.setEnvRel([1, 2, 3, 2, 1, 2, 3, 2])
+        stop1.setNoiseAtt(0.2)
     #3 Voix
     elif i == 3:
+        print('Interpolation de cloche')
+        stopInterP.stop()
         voixHumaine()
+        setInterpol(15)
+        stop1.setRamp(15)
+        call2 = CallAfter(bell, time=5)
     #4 Cornet
     elif i == 4:
-        principal()
-        #glissContP.play()
-    #5 Gliss
-    elif i == 5:
-        print('Glissandi')
-        bourdon()
-        glissUpP.play()
-    #6 Stop interp
-    elif i == 6:
         print('Interpolation de jeux')
         glissUpP.stop()
         transReset()
@@ -354,57 +391,40 @@ def stateChanges(address, *args):
         bourdon()
         stop1.setRamp(5)
         stopInterP.play()
-    #7 Bell interp
-    elif i == 7:
-        print('Interpolation de cloche')
-        stopInterP.stop()
-        voixHumaine()
-        setInterpol(15)
-        stop1.setRamp(15)
-        call2 = CallAfter(bell, time=5)
-    #8 Enveloppe
-    elif i == 8:
-        print('Enveloppe dynamique')
-        glissUpP.stop()
-        principal()
-        stop1.setEnvAtt([3, 2, 1, 2, 3, 2, 1, 2, 3, 2, 1, 4, 2, 1, 4, 2, 5, 3, 6, 2])
-        stop1.setEnvRel([1, 2, 3, 2, 1, 2, 3, 2, 1, 2, 3, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
-        stop1.setNoiseAtt(4)
-    #9 Aléatoire
-    elif i == 9:
+    #5 
+    elif i == 5:
         print('Aléatoire')
         randMulP.start()
-    #10 Dissocié
-    elif i == 10:
+    #6 
+    elif i == 6:
         print('Dissocié')
         randMulP.stop()
         bourdon()
         dissP.play()
-    #10e Elegie - Vienne le jour enfin
-    elif i == 11:
+    #7
+    elif i == 7:
         print('7e Elegie - Non, plus d’imploration')
         randMulP.stop()
         setRamp(5)
         cornet()
-    #10e Elegie - Vienne le jour enfin
-    elif i == 12:
+    #8
+    elif i == 8:
         print('7e Elegie - Non, plus d’imploration')
         randMulP.stop()
         setRamp(5)
         cornet()
-    #10e Elegie - Vienne le jour enfin
-    elif i == 13:
+    #9 
+    elif i == 9:
         print('8e Elegie - A pleins regardes, la créature')
         glissUpP.stop()
         setRamp(0.02)
         randMulP.play()
-    #10e Elegie - Vienne le jour enfin
-    elif i == 14:
+    #10 
+    elif i == 10:
         print('9e Elegie - Pourquoi, s’il est loisible aussi bien')
         randMulP.stop()
         glissContP.play()
         
-
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
 #voixHumaine()
@@ -434,7 +454,6 @@ def automEnv(x):
 #stop1.setEnvAtt([0.1, .1, .1, .1, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
 #automEnv([20, .1, .1, .1, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
 
-
 stopV = stop1.vel()
 dummy = Sig(0)
 trigDiss = Thresh(stop1.vel(), threshold=100, dir=0)
@@ -442,15 +461,16 @@ trigDiss = Thresh(stop1.vel(), threshold=100, dir=0)
 randPartP = Pattern(function=randPart, time=30)
 randMulP = Pattern(function=randMul, time=3)
 glissUpP = Pattern(function=glissUp, time=0.08)
+glissUpP3 = Pattern(function=glissUp3, time=1)
 dissP = Pattern(function=dissocie, time=0.5)
 babP = Pattern(function=bourdonAndBell, time=0.2, arg=0.2)
 tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
 glissContP = Pattern(function=glissCont, time=0.1)
 stopInterP = Pattern(function=stopInter, time=Sig(stopInterPRand))
 
-
-#stop1.setRamp(5)
-#stopInterP.play()
+#glissUpP.play()
+#glissUp2()
+#glissUpP3.play()
 
 # Generates an audio ramp from 36 to 84, from
 # which MIDI pitches will be extracted.
@@ -459,35 +479,7 @@ pitch = Phasor(freq=11, mul=48, add=36)
 # Global variable to count the down and up beats.
 count = 0
 
-"""
-def midi_event():
-    global count
-    # Retrieve the value of the pitch audio stream and convert it to an int.
-    pit = int(pitch.get())
-
-    # If the count is 0 (down beat), play a louder and longer event, otherwise
-    # play a softer and shorter one.
-    if count == 0:
-        vel = random.randint(90, 110)
-        dur = 500
-    else:
-        vel = random.randint(50, 70)
-        dur = 125
-
-    # Increase and wrap the count to generate a 4 beats sequence.
-    count = (count + 1) % 4
-
-    print("pitch: %d, velocity: %d, duration: %d" % (pit, vel, dur))
-
-    # The Server's `makenote` method generates a noteon event immediately
-    # and the correponding noteoff event after `duration` milliseconds.
-    s.makenote(pitch=pit, velocity=vel, duration=dur)
-
-# Generates a MIDI event every 125 milliseconds.
-pat = Pattern(midi_event, 0.5).play()
-"""
-
-s.amp = 0.3
+s.amp = 1
 
 s.start()
 
