@@ -6,7 +6,7 @@ from random import randint
 pa_list_devices()
 pm_list_devices()
 s = Server()
-s.setOutputDevice(1)
+s.setOutputDevice(2)
 s.setMidiOutputDevice(5)
 s.setMidiInputDevice(99)
 s.boot()
@@ -19,16 +19,16 @@ closed = 38
 path = "/Users/kjel/Documents/Ableton/Enregistrement_dorgue Project/Fichiers" + "2023-03-07_brdn_pres_avecBruit_chr_mono.wav"
 
 # stereo playback with a slight shift between the two channels.
-sf = SfPlayer("/Users/kjel/Documents/Ableton/Enregistrement_dorgue Project/Fichiers/2023-03-07_brdn_pres_avecBruit_chr_mono-re-boucle-plus.wav", speed=[1, 1], loop=True, mul=1).out()
+#sf = SfPlayer("/Users/kjel/Documents/Ableton/Enregistrement_dorgue Project/Fichiers/2023-03-07_brdn_pres_avecBruit_chr_mono-re-boucle-plus.wav", speed=[1, 1], loop=True, mul=1).out()
 
-sfSpec = Spectrum(sf, size=8192)
+#sfSpec = Spectrum(sf, size=8192)
 
 class Stop:
     def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans):
         # scale=1 to get pitch values in hertz
-        #self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
-        self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
-        self.note.keyboard()
+        self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
+        #self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
+        #self.note.keyboard()
         #self.partScRat = Sig(partScRat)
         self.ramp = Sig(ramp)
         self.inter = Sig(inter)
@@ -58,10 +58,11 @@ class Stop:
         self.partSc = MidiLinseg(self.velocity, self.partScEnv)
         self.noiseEnv = MidiAdsr(self.note['velocity'], attack=noiseAtt, decay=noiseDec, sustain=noiseSus, release=noiseRel)
         self.noise = PinkNoise(1.5) * self.noiseEnv
-        self.n3Harm = Resonx(self.noise, freq=(self.note['pitch']*(6/2)), q=5, mul=1)
+        self.n1Harm = Resonx(self.noise, freq=(self.note['pitch']), q=1, mul=0.5)
+        self.n3Harm = Resonx(self.noise, freq=(self.note['pitch']*(22/8)), q=8, mul=1)
         self.n5Harm = Resonx(self.noise, freq=(self.note['pitch']*(8/3)), q=3, mul=0.5)
         self.n10Harm = Resonx(self.noise, freq=(self.note['pitch']*(16/3)), q=3, mul=0.1)
-        self.nMix = Mix(self.n3Harm+self.n5Harm+self.n10Harm, 1, mul=self.noiseMul)
+        self.nMix = Mix(self.n1Harm+self.n3Harm+self.n5Harm+self.n10Harm, 1, mul=self.noiseMul)
         self.wind = PinkNoise(0.01)
         self.fmod = self.note['pitch'] * self.ratio
         self.amod = self.fmod * self.index
@@ -80,7 +81,7 @@ class Stop:
             self.envs.append(MidiAdsr(self.note['velocity'], attack=att[i], decay=dec[i], sustain=sus[i], release=rel[i], mul=self.amps[-1]))
             #self.trans.append(SigTo(trans, time=0.025))
             self.part.append(SigTo(part[i], time=0.2))
-            self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch'])-0.15)) + Randi(-rand, rand, 5) + self.trans + self.mod, mul=self.envs[-1]))
+            self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch']-0.15))) + Randi(-rand, rand, 5) + self.trans + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=mMul)
         self.filt = ButLP(self.mix+self.sum+self.nMix, 20000)
@@ -160,7 +161,7 @@ class Stop:
 
 #self, tMul, sMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans
 
-stop1 = Stop(0.07, 1, 0.00001, 0.05, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.70, 0.1, 10, 1, 0, 0.02, 0, 0.0, 1.5, 0, 0.25, closed).out()
+stop1 = Stop(0.07, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 1, 0, 0.02, 0, 0.0, 1.5, 0, 0.25, closed).out()
 
 def bourdon():
     stop1.setMul([1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0])
@@ -371,8 +372,9 @@ def stateChanges(address, *args):
     elif i == 2:
         print('Enveloppe dynamique')
         glissUpP3.stop()
-        #stop1.setMul([0.588, 0.062, 0.412, 0.01, 0.092, 0.092, 0, 0])
-        principal()
+        transReset()
+        stop1.setMul([0.588, 0.062, 0.412, 0.01, 0.092, 0.092, 0, 0])
+        #principal()
         stop1.setEnvAtt([0.181, 0.169, 0.073, 0.073, 0.088, 0.088, 0.1, 0.2])
         stop1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
         stop1.setEnvSus([0.3, 0.2, 0.1, 0.005, 0.005, 0.005, 0.005, 0.005])
