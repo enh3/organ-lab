@@ -7,19 +7,20 @@ pa_list_devices()
 pm_list_devices()
 s = Server()
 s.setOutputDevice(2)
-s.setMidiOutputDevice(5)
-s.setMidiInputDevice(0)
+#s.setMidiOutputDevice(5)
+#s.setMidiInputDevice(0)
 s.boot()
 
 partList = list(range(1, 8, 1))
 transList = list(range(1, 8, 1))
-open = 36
-closed = 38
+openSumT = 36
+closedSumT = 38
+openSumR = 0.125
+closedSumR = 0.25
 
 path = "/Users/kjel/Documents/Ableton/Enregistrement_dorgue Project/Fichiers" + "2023-03-07_brdn_pres_avecBruit_chr_mono.wav"
 
-# stereo playback with a slight shift between the two channels.
-#sf = SfPlayer("/Users/kjel/Documents/Ableton/Enregistrement_dorgue Project/Fichiers/2023-03-07_brdn_pres_avecBruit_chr_mono-re-boucle-plus.wav", speed=[1, 1], loop=True, mul=1).out()
+#sf = SfPlayer("/Users/kjel/Documents/Ableton/Élegies Project/2023-05-17_looped_env_dyn_norm.wav", speed=[1, 1], loop=True, mul=1).mix(1).out()
 
 #sfSpec = Spectrum(sf, size=8192)
 
@@ -70,7 +71,7 @@ class Stop:
         self.mod = Sine(self.fmod, mul=self.amod)
         #self.harmT = HarmTable([0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
         #self.harmOsc = Osc(table=self.harmT, freq=10**self.partSc) * (MToF(FToM(self.note['pitch'])-0.15)) + Randi(-rand, rand, 5) + self.trans[-1] + self.mod
-        self.sum = SumOsc(freq=(MToF(FToM(self.note['pitch'])-0.15+self.sumTrans) + self.trans), ratio=self.sumRat, index=0.75, mul=self.noiseEnv*self.sumMul)
+        self.sum = SumOsc(freq=(MToF(FToM(self.note['pitch'])-0.15+self.sumTrans) + self.trans), ratio=self.sumRat, index=0.3, mul=self.noiseEnv*self.sumMul)
         # Handles the user polyphony independently to avoid mixed polyphony concerns (self.note already contains 10 streams)
         for i in range(len(part)):
             # SigTo to avoid clicks
@@ -87,7 +88,7 @@ class Stop:
         self.mix = Mix(self.mixed, 2, mul=mMul)
         self.filt = ButLP(self.mix+self.sum+self.nMix, 5000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
-        #self.sp = Spectrum(self.rev.mix(1), size=8192)
+        self.sp = Spectrum(self.rev.mix(1), size=8192)
         #self.pp = Print(self.att, interval=2, message="Audio stream value")
         
     def out(self):
@@ -165,7 +166,7 @@ class Stop:
 
 #self, tMul, sMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans
 
-stop1 = Stop(0.07, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 1, 0, 0.02, 0, 0.0, 1.5, 0, 0.25, closed).out()
+stop1 = Stop(0.8, 1, 0.1, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 1, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT).out()
 
 def bourdon():
     stop1.setMul([1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0])
@@ -441,19 +442,13 @@ def stateChanges(address, *args):
         
 scan = OscDataReceive(port=7400, address="*", function=stateChanges)
 
-#voixHumaine()
-#setInterpol(100)
-#stop1.setRamp(100)
-#call1 = CallAfter(bourdon, time=4)
-#autom()
-#call1 = CallAfter(setInterpol, time=90, arg=60)
-#call2 = CallAfter(stop1.setRamp, time=90, arg=60)
-#call3 = CallAfter(bell, time=100)
-#bell()
-#randPartP.play()
-#call1 = CallAfter(stop1.setEnvAtt, time=4, arg=(.1, .1, .1, .1, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01))
-
-#call3 = CallAfter(stop1.setEnvAtt, time=4, arg=(5, .1, .1, .1, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01))
+stop1.setMul([1, 0.5, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
+#principal()
+stop1.setEnvAtt([0.181, 0.169, 0.073, 0.073, 0.088, 0.088, 0.1, 0.2])
+stop1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
+stop1.setEnvSus([1, 0.4, 0.6, 0.35, 0.5, 0.25, 0.04, 0.5])
+stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+stop1.setNoiseAtt(0.2)
 
 listTest = list(range(1, 20, 1))
 
@@ -464,9 +459,6 @@ def automEnv(x):
         autEnv = Linseg([(0,0),(10,x[i])])
     autEnv.play()
     stop1.setEnvAtt(autEnv)
-
-#stop1.setEnvAtt([0.1, .1, .1, .1, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
-#automEnv([20, .1, .1, .1, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
 
 stopV = stop1.vel()
 dummy = Sig(0)
@@ -493,7 +485,7 @@ pitch = Phasor(freq=11, mul=48, add=36)
 # Global variable to count the down and up beats.
 count = 0
 
-s.amp = 0.7
+s.amp = 0.05
 
 s.start()
 
