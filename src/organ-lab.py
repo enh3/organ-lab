@@ -6,7 +6,7 @@ from random import randint
 pa_list_devices()
 pm_list_devices()
 s = Server()
-s.setOutputDevice(2)
+s.setOutputDevice(1)
 #s.setMidiOutputDevice(5)
 #s.setMidiInputDevice(0)
 s.boot()
@@ -22,14 +22,16 @@ path = "/Users/kjel/Documents/Ableton/Enregistrement_dorgue Project/Fichiers" + 
 
 #sf = SfPlayer("/Users/kjel/Documents/Ableton/Élegies Project/2023-05-17_looped_env_dyn_norm.wav", speed=[1, 1], loop=True, mul=1).mix(1).out()
 
-#sfSpec = Spectrum(sf, size=8192)
+#sf = SfPlayer("/Users/kjel/Documents/Ableton/Élegies Project/Audio/Bruit_de_soufflerie/2023-03-06_bruit_de_souf_loin.wav", speed=1, loop=True, mul=0.05).mix(2).out()
+
+#sfSpec = Spectrum(sf.mix(1), size=8192)
 
 class Stop:
     def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans):
         # scale=1 to get pitch values in hertz
-        self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
-        #self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
-        #self.note.keyboard()
+        #self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
+        self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
+        self.note.keyboard()
         #self.partScRat = Sig(partScRat)
         self.ramp = Sig(ramp)
         self.inter = Sig(inter)
@@ -65,7 +67,8 @@ class Stop:
         self.n5Harm = Resonx(self.noise, freq=(self.note['pitch']*(8/3)), q=3, mul=0.5)
         self.n10Harm = Resonx(self.noise, freq=(self.note['pitch']*(16/3)), q=3, mul=0.1)
         self.nMix = Mix(self.n1Harm+self.n3Harm+self.n5Harm+self.n10Harm, 1, mul=self.noiseMul)
-        self.wind = PinkNoise(0.01)
+        self.wind = PinkNoise(0.001) * self.noiseEnv
+        self.windF = Tone(self.wind, 950)
         self.fmod = self.note['pitch'] * self.ratio
         self.amod = self.fmod * self.index
         self.mod = Sine(self.fmod, mul=self.amod)
@@ -86,7 +89,7 @@ class Stop:
             self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch']-0.15))) + Randi(-rand, rand, 5) + self.trans + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=mMul)
-        self.filt = ButLP(self.mix+self.sum+self.nMix, 5000)
+        self.filt = ButLP(self.mix + self.nMix + self.sum + self.windF, 10000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
         self.sp = Spectrum(self.rev.mix(1), size=8192)
         #self.pp = Print(self.att, interval=2, message="Audio stream value")
@@ -460,6 +463,11 @@ def automEnv(x):
     autEnv.play()
     stop1.setEnvAtt(autEnv)
 
+stopP = stop1.setPart([1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0])
+stop1.setNoiseAtt([3, 4, 2, 2.5, 3, .4, .5, .3])
+stop1.setNoiseDec([3, 4, 2, 0.3, 0.6, .4, .5, .3])
+stop1.setEnvAtt([3, 4, 2, 2.5, 3, .4, .5, .3])
+stop1.setEnvDec([3, 4, 2, 0.3, 0.6, .4, .5, .3])
 stopV = stop1.vel()
 dummy = Sig(0)
 trigDiss = Thresh(stop1.vel(), threshold=100, dir=0)
@@ -489,8 +497,8 @@ s.amp = 0.05
 
 s.start()
 
-path = os.path.join(os.path.expanduser("~"), "Desktop", "pretty2.wav")
-# Record for 10 seconds a 24-bit wav file.
+path = os.path.join(os.path.expanduser("~"), "Desktop", "noise4-rev.wav")
+
 s.recordOptions(filename=path, fileformat=0, sampletype=1)
 
 s.gui(locals())
