@@ -6,7 +6,7 @@ from random import randint
 pa_list_devices()
 pm_list_devices()
 s = Server()
-s.setOutputDevice(1)
+s.setOutputDevice(2)
 #s.setMidiOutputDevice(5)
 #s.setMidiInputDevice(0)
 s.boot()
@@ -89,7 +89,7 @@ class Stop:
             self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch']-0.15))) + Randi(-rand, rand, 5) + self.trans + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=mMul)
-        self.filt = ButLP(self.mix + self.nMix + self.sum + self.windF, 10000)
+        self.filt = ButLP(self.mix + self.nMix + self.sum + self.windF, 5000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
         self.sp = Spectrum(self.rev.mix(1), size=8192)
         #self.pp = Print(self.att, interval=2, message="Audio stream value")
@@ -169,7 +169,7 @@ class Stop:
 
 #self, tMul, sMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans
 
-stop1 = Stop(0.8, 1, 0.1, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 1, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT).out()
+stop1 = Stop(0.8, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 1, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT).out()
 
 def bourdon():
     stop1.setMul([1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0])
@@ -445,6 +445,7 @@ def stateChanges(address, *args):
         
 scan = OscDataReceive(port=7400, address="*", function=stateChanges)
 
+'''
 stop1.setMul([1, 0.5, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
 #principal()
 stop1.setEnvAtt([0.181, 0.169, 0.073, 0.073, 0.088, 0.088, 0.1, 0.2])
@@ -452,6 +453,7 @@ stop1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
 stop1.setEnvSus([1, 0.4, 0.6, 0.35, 0.5, 0.25, 0.04, 0.5])
 stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
 stop1.setNoiseAtt(0.2)
+'''
 
 listTest = list(range(1, 20, 1))
 
@@ -463,12 +465,16 @@ def automEnv(x):
     autEnv.play()
     stop1.setEnvAtt(autEnv)
 
+
+principal()
 stopP = stop1.setPart([1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0])
 stop1.setNoiseAtt([3, 4, 2, 2.5, 3, .4, .5, .3])
 stop1.setNoiseDec([3, 4, 2, 0.3, 0.6, .4, .5, .3])
 stop1.setEnvAtt([3, 4, 2, 2.5, 3, .4, .5, .3])
 stop1.setEnvDec([3, 4, 2, 0.3, 0.6, .4, .5, .3])
 stopV = stop1.vel()
+
+
 dummy = Sig(0)
 trigDiss = Thresh(stop1.vel(), threshold=100, dir=0)
 
@@ -485,6 +491,7 @@ stopInterP = Pattern(function=stopInter, time=Sig(stopInterPRand))
 #glissUpP.play()
 #glissUp2()
 #glissUpP3.play()
+#bourdon()
 
 # Generates an audio ramp from 36 to 84, from
 # which MIDI pitches will be extracted.
