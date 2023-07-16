@@ -7,8 +7,8 @@ pa_list_devices()
 pm_list_devices()
 s = Server()
 s.setOutputDevice(2)
-#s.setMidiOutputDevice(5)
-#s.setMidiInputDevice(0)
+s.setMidiOutputDevice(98)
+s.setMidiInputDevice(1)
 s.boot()
 
 partList = list(range(1, 8, 1))
@@ -18,7 +18,7 @@ closedSumT = 38
 openSumR = 0.125
 closedSumR = 0.25
 
-path = "/Users/kjel/Documents/Ableton/Enregistrement_dorgue Project/Fichiers" + "2023-03-07_brdn_pres_avecBruit_chr_mono.wav"
+#path = "/Users/kjel/Documents/Ableton/Enregistrement_dorgue Project/Fichiers" + "2023-03-07_brdn_pres_avecBruit_chr_mono.wav"
 
 #sf = SfPlayer("/Users/kjel/Documents/Ableton/Élegies Project/2023-05-17_looped_env_dyn_norm.wav", speed=[1, 1], loop=True, mul=1).mix(1).out()
 
@@ -465,7 +465,7 @@ def automEnv(x):
     autEnv.play()
     stop1.setEnvAtt(autEnv)
 
-
+'''
 principal()
 stopP = stop1.setPart([1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0])
 stop1.setNoiseAtt([3, 4, 2, 2.5, 3, .4, .5, .3])
@@ -473,7 +473,7 @@ stop1.setNoiseDec([3, 4, 2, 0.3, 0.6, .4, .5, .3])
 stop1.setEnvAtt([3, 4, 2, 2.5, 3, .4, .5, .3])
 stop1.setEnvDec([3, 4, 2, 0.3, 0.6, .4, .5, .3])
 stopV = stop1.vel()
-
+'''
 
 dummy = Sig(0)
 trigDiss = Thresh(stop1.vel(), threshold=100, dir=0)
