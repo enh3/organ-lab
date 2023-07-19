@@ -6,9 +6,9 @@ from random import randint
 pa_list_devices()
 pm_list_devices()
 s = Server()
-s.setOutputDevice(2)
+s.setOutputDevice(1)
 s.setMidiOutputDevice(98)
-s.setMidiInputDevice(1)
+s.setMidiInputDevice(0)
 s.boot()
 
 partList = list(range(1, 8, 1))
@@ -443,7 +443,7 @@ def stateChanges(address, *args):
         bourdon()
         dissP.play()
         
-scan = OscDataReceive(port=7400, address="*", function=stateChanges)
+scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
 '''
 stop1.setMul([1, 0.5, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
