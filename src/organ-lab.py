@@ -22,7 +22,7 @@ closedSumR = 0.25
 
 #sf = SfPlayer("/Users/kjel/Documents/Ableton/Élegies Project/2023-05-17_looped_env_dyn_norm.wav", speed=[1, 1], loop=True, mul=1).mix(1).out()
 
-#sf = SfPlayer("/Users/kjel/Documents/Ableton/Élegies Project/Audio/Bruit_de_soufflerie/2023-03-06_bruit_de_souf_loin.wav", speed=1, loop=True, mul=0.05).mix(2).out()
+#sf = SfPlayer("/Users/kjel/Documents/Ableton/Élegies Project/Audio/Bruit_de_soufflerie/2023-03-06_bruit_de_souf_loin.wav", speed=1, loop=True, mul=0.05).mix(2).out()
 
 #sfSpec = Spectrum(sf.mix(1), size=8192)
 
@@ -88,9 +88,9 @@ class Stop:
             self.part.append(SigTo(part[i], time=0.2))
             self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch']-0.15))) + Randi(-rand, rand, 5) + self.trans + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
-        self.mix = Mix(self.mixed, 2, mul=mMul)
+        self.mix = Mix(self.mixed, 1, mul=mMul)
         self.filt = ButLP(self.mix + self.nMix + self.sum + self.windF, 5000)
-        self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
+        self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15, mul=self.tMul).mix(1)
         self.sp = Spectrum(self.rev.mix(1), size=8192)
         #self.pp = Print(self.att, interval=2, message="Audio stream value")
         
@@ -443,7 +443,87 @@ def stateChanges(address, *args):
         bourdon()
         dissP.play()
         
+def mStateChanges(ctrl, chan):
+    global i, stopV, call1, call2
+    print("Ctrl: ", ctrl)
+    print("Chan: ", chan)
+    if chan == 1:
+        #1e Élégie
+        if ctrl == 1:
+            print('Glissandi')
+            glissUpP.play()
+        #2e Élégie
+        elif ctrl == 2:
+            print('Enveloppe dynamique')
+            glissUpP.stop()
+            transReset()
+            stop1.setMul([0.588, 0.062, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
+            #principal()
+            stop1.setEnvAtt([0.181, 0.169, 0.073, 0.073, 0.088, 0.088, 0.1, 0.2])
+            stop1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
+            stop1.setEnvSus([0.6, 0.5, 0.7, 0.2, 0.5, 0.09, 0.05, 0.5])
+            stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+            stop1.setNoiseAtt(0.2)
+        #3 Élégie
+        elif ctrl == 3:
+            print('Interpolation de cloche')
+            stopInterP.stop()
+            voixHumaine()
+            setInterpol(60)
+            stop1.setRamp(60)
+            call2 = CallAfter(bell, time=5)
+        #4e Élégie
+        elif ctrl == 4:
+            print('Tmul = 0')
+            stop1.setTMul(0)
+        #5e Élégie
+        elif ctrl == 5:
+            print('Interpolation de jeux')
+            stop1.setTMul(1)
+            glissUpP.stop()
+            transReset()
+            stop1.setRatio(0)
+            stop1.setIndex(1)
+            bourdon()
+            stop1.setRamp(5)
+            stopInterP.play()
+        #6e Élégie 
+        #7e Élégie
+        elif ctrl == 6:
+            print('7e Elegie - Non, plus d’imploration')
+            randMulP.stop()
+            setRamp(5)
+            cornet()
+        #8e Élégie
+        elif ctrl == 7:
+            print('7e Elegie - Non, plus d’imploration')
+            randMulP.stop()
+            setRamp(5)
+            cornet()
+        #9 
+        elif ctrl == 8:
+            print('8e Elegie - A pleins regardes, la créature')
+            glissUpP.stop()
+            setRamp(0.02)
+            randMulP.play()
+        #10 
+        elif ctrl == 9:
+            print('9e Elegie - Pourquoi, s’il est loisible aussi bien')
+            randMulP.stop()
+            glissContP.play()
+        elif ctrl == 10:
+            randMulP.start()
+        elif ctrl == 11:    
+            print('Dissocié')
+            randMulP.stop()
+            bourdon()
+            dissP.play()
+        
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
+
+mScan = CtlScan2(mStateChanges, toprint=False)
+
+
 
 '''
 stop1.setMul([1, 0.5, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
