@@ -88,9 +88,9 @@ class Stop:
             self.part.append(SigTo(part[i], time=0.2))
             self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch']-0.15))) + Randi(-rand, rand, 5) + self.trans + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
-        self.mix = Mix(self.mixed, 1, mul=mMul)
+        self.mix = Mix(self.mixed, 2, mul=mMul)
         self.filt = ButLP(self.mix + self.nMix + self.sum + self.windF, 5000)
-        self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15, mul=self.tMul).mix(1)
+        self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
         self.sp = Spectrum(self.rev.mix(1), size=8192)
         #self.pp = Print(self.att, interval=2, message="Audio stream value")
         
@@ -285,7 +285,7 @@ def dissocie(x):
         dissCount += 1
         print(dissCount)
         if dissCount > 1:
-            stop1.setMul([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+            stop1.setMul([0, 0, 0, 0, 0, 0, 0, 0])
             print("set0")
         elif dissCount == 1 :
             stop1.setMul([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
@@ -316,6 +316,18 @@ def bell():
     #stop1.setPartSc(1.05)
     stop1.setPartScRat(1.02)
     print(bell)
+    
+def reset():
+    stop1.setRatio(1)
+    stop1.setIndex(1)
+    stop1.setNoiseAtt(0.001)
+    stop1.setNoiseDec(0.1)
+    stop1.setNoiseSus(0.01)
+    stop1.setNoiseRel(0.1)    
+    stop1.setNoiseMul(0.9)
+    stop1.setNoiseFiltQ(4)
+    #stop1.setPartSc(1.05)
+    stop1.setPartScRat(1)
     
 babCount = 0
 def bourdonAndBell(x):
@@ -403,6 +415,7 @@ def stateChanges(address, *args):
     #5e Élégie
     elif i == 7:
         print('Interpolation de jeux')
+        reset()
         stop1.setTMul(1)
         glissUpP.stop()
         transReset()
@@ -556,22 +569,22 @@ stopV = stop1.vel()
 '''
 
 dummy = Sig(0)
-trigDiss = Thresh(stop1.vel(), threshold=100, dir=0)
+trigDiss = Thresh(stop1.vel(), threshold=0.01, dir=0)
 
 randPartP = Pattern(function=randPart, time=30)
 randMulP = Pattern(function=randMul, time=3)
 glissUpP = Pattern(function=glissUp, time=0.12)
 glissUpP3 = Pattern(function=glissUp3, time=1)
-dissP = Pattern(function=dissocie, time=0.5)
+dissP = Pattern(function=dissocie, time=0.5, arg=4)
 babP = Pattern(function=bourdonAndBell, time=0.2, arg=0.2)
 tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
 glissContP = Pattern(function=glissCont, time=0.1)
 stopInterP = Pattern(function=stopInter, time=Sig(stopInterPRand))
 
-#glissUpP.play()
-#glissUp2()
-#glissUpP3.play()
-#bourdon()
+tr.play()
+
+x = Print(stop1.vel(), interval=2, message="Audio stream value")
+
 
 # Generates an audio ramp from 36 to 84, from
 # which MIDI pitches will be extracted.
