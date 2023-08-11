@@ -30,7 +30,7 @@ class Stop:
     def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans):
         # scale=1 to get pitch values in hertz
         #self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
-        self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
+        self.note = Notein(poly=10, scale=1, first=0, last=127, channel=6)
         self.note.keyboard()
         #self.partScRat = Sig(partScRat)
         self.ramp = Sig(ramp)
@@ -285,7 +285,7 @@ def dissocie(x):
         dissCount += 1
         print(dissCount)
         if dissCount > 1:
-            stop1.setMul([0, 0, 0, 0, 0, 0, 0, 0])
+            stop1.setMul([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
             print("set0")
         elif dissCount == 1 :
             stop1.setMul([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
@@ -316,18 +316,6 @@ def bell():
     #stop1.setPartSc(1.05)
     stop1.setPartScRat(1.02)
     print(bell)
-    
-def reset():
-    stop1.setRatio(1)
-    stop1.setIndex(1)
-    stop1.setNoiseAtt(0.001)
-    stop1.setNoiseDec(0.1)
-    stop1.setNoiseSus(0.01)
-    stop1.setNoiseRel(0.1)    
-    stop1.setNoiseMul(0.9)
-    stop1.setNoiseFiltQ(4)
-    #stop1.setPartSc(1.05)
-    stop1.setPartScRat(1)
     
 babCount = 0
 def bourdonAndBell(x):
@@ -374,95 +362,16 @@ i = 0
 call1 = None
 call2 = None
 
-def stateChanges(address, *args):
-    global i, stopV, call1, call2
-    print(address)
-    print(args)
-    if address == "/continue" and args[0] == 1:
-        i += 1
-        print(i)
-    elif address == "/return" and args[0] == 1:
-        i -= 1
-        print(i)
-    #1e Élégie
-    if i == 2:
-        print('Glissandi')
-        glissUpP.play()
-    #2e Élégie
-    elif i == 3:
-        print('Enveloppe dynamique')
-        glissUpP.stop()
-        transReset()
-        stop1.setMul([0.588, 0.062, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
-        #principal()
-        stop1.setEnvAtt([0.181, 0.169, 0.073, 0.073, 0.088, 0.088, 0.1, 0.2])
-        stop1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
-        stop1.setEnvSus([0.6, 0.5, 0.7, 0.2, 0.5, 0.09, 0.05, 0.5])
-        stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
-        stop1.setNoiseAtt(0.2)
-    #3 Élégie
-    elif i == 4:
-        print('Interpolation de cloche')
-        stopInterP.stop()
-        voixHumaine()
-        setInterpol(60)
-        stop1.setRamp(60)
-        call2 = CallAfter(bell, time=5)
-    #4e Élégie
-    elif i == 5:
-        print('Tmul = 0')
-        stop1.setTMul(0)
-    #5e Élégie
-    elif i == 7:
-        print('Interpolation de jeux')
-        reset()
-        stop1.setTMul(1)
-        glissUpP.stop()
-        transReset()
-        stop1.setRatio(0)
-        stop1.setIndex(1)
-        bourdon()
-        stop1.setRamp(5)
-        stopInterP.play()
-    #6e Élégie 
-    #7e Élégie
-    elif i == 10:
-        print('7e Elegie - Non, plus d’imploration')
-        randMulP.stop()
-        setRamp(5)
-        cornet()
-    #8e Élégie
-    elif i == 11:
-        print('7e Elegie - Non, plus d’imploration')
-        randMulP.stop()
-        setRamp(5)
-        cornet()
-    #9 
-    elif i == 12:
-        print('8e Elegie - A pleins regardes, la créature')
-        glissUpP.stop()
-        setRamp(0.02)
-        randMulP.play()
-    #10 
-    elif i == 13:
-        print('9e Elegie - Pourquoi, s’il est loisible aussi bien')
-        randMulP.stop()
-        glissContP.play()
-    elif i == 14:
-        randMulP.start()
-    elif i == 15:    
-        print('Dissocié')
-        randMulP.stop()
-        bourdon()
-        dissP.play()
-        
+test = Midictl(1, minscale=0, maxscale=127, channel=6)
+pp = None
+
 def mStateChanges(ctrl, chan):
-    global i, stopV, call1, call2
-    print("Ctrl: ", ctrl)
-    print("Chan: ", chan)
-    if chan == 1:
+    global i, stopV, call1, call2, mValue, pp
+    mValue = Midictl(ctrl, minscale=0, maxscale=127, channel=chan)
+    print(int(mValue.get()))
+    if chan == 6 and int(mValue.get()) == 20:
         #1e Élégie
-        if ctrl == 1:
+        if ctrl == 1: 
             print('Glissandi')
             glissUpP.play()
         #2e Élégie
@@ -531,11 +440,9 @@ def mStateChanges(ctrl, chan):
             randMulP.stop()
             bourdon()
             dissP.play()
-        
-scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
+mValue = None
 mScan = CtlScan2(mStateChanges, toprint=False)
-
 
 
 '''
@@ -569,22 +476,22 @@ stopV = stop1.vel()
 '''
 
 dummy = Sig(0)
-trigDiss = Thresh(stop1.vel(), threshold=0.01, dir=0)
+trigDiss = Thresh(stop1.vel(), threshold=100, dir=0)
 
 randPartP = Pattern(function=randPart, time=30)
 randMulP = Pattern(function=randMul, time=3)
 glissUpP = Pattern(function=glissUp, time=0.12)
 glissUpP3 = Pattern(function=glissUp3, time=1)
-dissP = Pattern(function=dissocie, time=0.5, arg=4)
+dissP = Pattern(function=dissocie, time=0.5)
 babP = Pattern(function=bourdonAndBell, time=0.2, arg=0.2)
 tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
 glissContP = Pattern(function=glissCont, time=0.1)
 stopInterP = Pattern(function=stopInter, time=Sig(stopInterPRand))
 
-tr.play()
-
-x = Print(stop1.vel(), interval=2, message="Audio stream value")
-
+#glissUpP.play()
+#glissUp2()
+#glissUpP3.play()
+#bourdon()
 
 # Generates an audio ramp from 36 to 84, from
 # which MIDI pitches will be extracted.
