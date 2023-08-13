@@ -29,9 +29,9 @@ closedSumR = 0.25
 class Stop:
     def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans):
         # scale=1 to get pitch values in hertz
-        #self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
-        self.note = Notein(poly=10, scale=1, first=0, last=127, channel=6)
-        self.note.keyboard()
+        self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
+        #self.note = Notein(poly=10, scale=1, first=0, last=127, channel=6)
+        #self.note.keyboard()
         #self.partScRat = Sig(partScRat)
         self.ramp = Sig(ramp)
         self.inter = Sig(inter)
@@ -362,20 +362,18 @@ i = 0
 call1 = None
 call2 = None
 
-test = Midictl(1, minscale=0, maxscale=127, channel=6)
-pp = None
+mValue = Midictl(ctlnumber=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], minscale=0, maxscale=127, channel=6)
+pp = Print(mValue, method=1, message="Audio stream value")
 
-def mStateChanges(ctrl, chan):
-    global i, stopV, call1, call2, mValue, pp
-    mValue = Midictl(ctrl, minscale=0, maxscale=127, channel=chan)
-    print(int(mValue.get()))
+def mStateChanges(ctl, chan):
+    global i, stopV, call1, call2
     if chan == 6 and int(mValue.get()) == 20:
         #1e Élégie
-        if ctrl == 1: 
+        if ctl == 1: 
             print('Glissandi')
             glissUpP.play()
         #2e Élégie
-        elif ctrl == 2:
+        elif ctl == 2:
             print('Enveloppe dynamique')
             glissUpP.stop()
             transReset()
@@ -387,7 +385,7 @@ def mStateChanges(ctrl, chan):
             stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
             stop1.setNoiseAtt(0.2)
         #3 Élégie
-        elif ctrl == 3:
+        elif ctl == 3:
             print('Interpolation de cloche')
             stopInterP.stop()
             voixHumaine()
@@ -395,11 +393,11 @@ def mStateChanges(ctrl, chan):
             stop1.setRamp(60)
             call2 = CallAfter(bell, time=5)
         #4e Élégie
-        elif ctrl == 4:
+        elif ctl == 4:
             print('Tmul = 0')
             stop1.setTMul(0)
         #5e Élégie
-        elif ctrl == 5:
+        elif ctl == 5:
             print('Interpolation de jeux')
             stop1.setTMul(1)
             glissUpP.stop()
@@ -411,37 +409,36 @@ def mStateChanges(ctrl, chan):
             stopInterP.play()
         #6e Élégie 
         #7e Élégie
-        elif ctrl == 6:
+        elif ctl == 6:
             print('7e Elegie - Non, plus d’imploration')
             randMulP.stop()
             setRamp(5)
             cornet()
         #8e Élégie
-        elif ctrl == 7:
+        elif ctl == 7:
             print('7e Elegie - Non, plus d’imploration')
             randMulP.stop()
             setRamp(5)
             cornet()
         #9 
-        elif ctrl == 8:
+        elif ctl == 8:
             print('8e Elegie - A pleins regardes, la créature')
             glissUpP.stop()
             setRamp(0.02)
             randMulP.play()
         #10 
-        elif ctrl == 9:
+        elif ctl == 9:
             print('9e Elegie - Pourquoi, s’il est loisible aussi bien')
             randMulP.stop()
             glissContP.play()
-        elif ctrl == 10:
+        elif ctl == 10:
             randMulP.start()
-        elif ctrl == 11:    
+        elif ctl == 11:    
             print('Dissocié')
             randMulP.stop()
             bourdon()
             dissP.play()
 
-mValue = None
 mScan = CtlScan2(mStateChanges, toprint=False)
 
 
