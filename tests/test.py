@@ -1,10 +1,32 @@
 from pyo import *
-s = Server().boot()
+
+pa_list_devices()
+pm_list_devices()
+s = Server()
+s.setOutputDevice(1)
+s.setMidiOutputDevice(98)
+s.setMidiInputDevice(0)
+s.boot()
+
+mCtl = [0]
+mValue = Midictl(ctlnumber=mCtl, minscale=0, maxscale=127, channel=6)
+
+def mStateChanges(ctl, chan):
+    global i, stopV, call1, call2, mValue, mCtl
+    mCtl[1] = ctl
+    print(mCtl[1])
+    mValue = Midictl(ctlnumber=mCtl, minscale=0, maxscale=127, channel=6)
+    pp = Print(mValue, method=1, message="Audio stream value")
+    print(int(mValue.get()))
+
+mScan = CtlScan2(mStateChanges, toprint=False)
+
+s.amp = 0.05
+
 s.start()
-m = Midictl(ctlnumber=[3, 4, 5], minscale=0, maxscale=127)
-pp = Print(m, method=1, message="Audio stream value")
-#p = Port(m, .02)
-#a = Sine(freq=p, mul=.3).out()
-#a1 = Sine(freq=p*1.25, mul=.3).out()
-#a2 = Sine(freq=p*1.5, mul=.3).out()
+
+path = os.path.join(os.path.expanduser("~"), "Desktop", "noise4-rev.wav")
+
+s.recordOptions(filename=path, fileformat=0, sampletype=1)
+
 s.gui(locals())
