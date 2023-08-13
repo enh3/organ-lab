@@ -29,7 +29,7 @@ closedSumR = 0.25
 class Stop:
     def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans):
         # scale=1 to get pitch values in hertz
-        self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
+        self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=6)
         #self.note = Notein(poly=10, scale=1, first=0, last=127, channel=6)
         #self.note.keyboard()
         #self.partScRat = Sig(partScRat)
