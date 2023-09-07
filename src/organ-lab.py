@@ -357,6 +357,22 @@ def stopInter():
         cornet()
     print('stopInter', stopInterPRand)
 
+'''
+def dynEnv():
+    print('Enveloppe dynamique')
+    stop1.setMul([0.588, 0.338, 0.665, 0.773, 0.512, 0.258, 0.6, 0])
+    stop1.setEnvAtt([0.285, 0.450, 0.327, 0.338, 0.385, 0.277, 0.1, 0.2])
+    stop1.setEnvDec([0.02, 0.04, 0.085, 0.008, 0.008, 0.008, 0.008, 0.008])
+    stop1.setEnvSus([0.446, 0.523, 0.404, 0.05, 0.05, 0.542, 0.05, 0.5])
+    stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+    stop1.setNoiseAtt(0.081)
+    stop1.setNoiseDec(0.146)
+    stop1.setNoiseSus(0.7)
+    stop1.setNoiseRel(0.1)
+    stop1.setNoiseMul(0.469)
+
+#dynEnv()
+'''
 i = 0
 
 call1 = None
@@ -379,7 +395,7 @@ def mStateChanges(ctl, chan):
             transReset()
             stop1.setMul([0.588, 0.062, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
             #principal()
-            stop1.setEnvAtt([0.181, 0.169, 0.073, 0.073, 0.088, 0.088, 0.1, 0.2])
+            stop1.setEnvAtt([0.281, 0.269, 0.173, 0.173, 0.188, 0.188, 0.1, 0.2])
             stop1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
             stop1.setEnvSus([0.6, 0.5, 0.7, 0.2, 0.5, 0.09, 0.05, 0.5])
             stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
