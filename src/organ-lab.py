@@ -90,7 +90,7 @@ class Stop:
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=mMul)
         self.filt = ButLP(self.mix + self.nMix + self.sum + self.windF, 5000)
-        self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
+        self.rev = STRev(self.mix, inpos=0.5, revtime=5, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
         self.sp = Spectrum(self.rev.mix(1), size=8192)
         self.pp = Print(self.amps, interval=2, message="Audio stream value")
         
@@ -169,7 +169,7 @@ class Stop:
 
 #self, tMul, sMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans
 
-stop1 = Stop(0.8, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 1, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT).out()
+stop1 = Stop(0.8, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 12, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT).out()
 
 def bourdon():
     stop1.setMul([1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0])
@@ -359,7 +359,7 @@ def stopInter():
 
 def dynEnv():
     print('Enveloppe dynamique')
-    stop1.setMul([0.588, 0.338, 0.665, 0.773, 0.512, 0.258, 0.6, 0])
+    stop1.setMul([0.588, 0.338, 0.665, 0.773, 0.512, 0.258, 0, 0])
     stop1.setEnvAtt([0.285, 0.450, 0.327, 0.338, 0.385, 0.277, 0.1, 0.2])
     stop1.setEnvDec([0.02, 0.04, 0.085, 0.008, 0.008, 0.008, 0.008, 0.008])
     stop1.setEnvSus([0.446, 0.523, 0.404, 0.05, 0.05, 0.542, 0.05, 0.5])
