@@ -8,7 +8,7 @@ pm_list_devices()
 s = Server()
 s.setOutputDevice(1)
 s.setMidiOutputDevice(98)
-s.setMidiInputDevice(0)
+s.setMidiInputDevice(99)
 s.boot()
 
 partList = list(range(1, 8, 1))
@@ -29,8 +29,8 @@ closedSumR = 0.25
 class Stop:
     def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans):
         # scale=1 to get pitch values in hertz
-        self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=6)
-        #self.note = Notein(poly=10, scale=1, first=0, last=127, channel=6)
+        self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
+        #self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
         #self.note.keyboard()
         #self.partScRat = Sig(partScRat)
         self.ramp = Sig(ramp)
@@ -92,7 +92,7 @@ class Stop:
         self.filt = ButLP(self.mix + self.nMix + self.sum + self.windF, 5000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
         self.sp = Spectrum(self.rev.mix(1), size=8192)
-        #self.pp = Print(self.att, interval=2, message="Audio stream value")
+        self.pp = Print(self.amps, interval=2, message="Audio stream value")
         
     def out(self):
         self.rev.out()
@@ -357,7 +357,6 @@ def stopInter():
         cornet()
     print('stopInter', stopInterPRand)
 
-'''
 def dynEnv():
     print('Enveloppe dynamique')
     stop1.setMul([0.588, 0.338, 0.665, 0.773, 0.512, 0.258, 0.6, 0])
@@ -371,8 +370,22 @@ def dynEnv():
     stop1.setNoiseRel(0.1)
     stop1.setNoiseMul(0.469)
 
-#dynEnv()
-'''
+def dynEnvTest():
+    print('Enveloppe dynamique')
+    stop1.setMul([0.5, 0.5, 0.5, 0, 0, 0, 0, 0])
+    stop1.setEnvAtt([0.2, 0.2, 0.2, 0.338, 0.385, 0.277, 0.1, 0.2])
+    stop1.setEnvDec([0.2, 0.2, 0.2, 0.008, 0.008, 0.008, 0.008, 0.008])
+    stop1.setEnvSus([0.2, 0.2, 0.2, 0.05, 0.05, 0.542, 0.05, 0.5])
+    stop1.setEnvRel([0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1])
+    stop1.setNoiseAtt(0.05)
+    stop1.setNoiseDec(0.05)
+    stop1.setNoiseSus(0.05)
+    stop1.setNoiseRel(0.05)
+    stop1.setNoiseMul(0)
+    stop1.setTMul(1)
+
+dynEnv()
+
 i = 0
 
 call1 = None
@@ -522,3 +535,4 @@ path = os.path.join(os.path.expanduser("~"), "Desktop", "noise4-rev.wav")
 s.recordOptions(filename=path, fileformat=0, sampletype=1)
 
 s.gui(locals())
+
