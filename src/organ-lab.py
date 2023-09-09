@@ -2,11 +2,12 @@ from pyo import *
 from s047_midi_sustain_and_polyphony import NoteinSustain
 from random import random
 from random import randint
+from get_local_ip import get_local_ip
 
 pa_list_devices()
 pm_list_devices()
 s = Server()
-s.setOutputDevice(2)
+s.setOutputDevice(1)
 s.setMidiOutputDevice(98)
 s.setMidiInputDevice(99)
 s.boot()
@@ -17,6 +18,7 @@ openSumT = 36
 closedSumT = 38
 openSumR = 0.125
 closedSumR = 0.25
+ip_addr = get_local_ip()
 
 #path = "/Users/kjel/Documents/Ableton/Enregistrement_dorgue Project/Fichiers" + "2023-03-07_brdn_pres_avecBruit_chr_mono.wav"
 
@@ -386,30 +388,33 @@ def dynEnvTest():
 
 #dynEnvTest()
 
-i = 0
+i = Sig(0)
 
 call1 = None
 call2 = None
 
 mValue = Midictl(ctlnumber=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], minscale=0, maxscale=127, channel=6)
-pp = Print(mValue, method=1, message="Audio stream value")
+#pp = Print(mValue, method=1, message="Audio stream value")
 
 def stateChanges(address, *args):
     global i, stopV, call1, call2
     print(address)
     print(args)
+    print('i = ', i.value)
+    if address == "/volume":
+        stop1.setTMul(args[0])
     if address == "/continue" and args[0] == 1:
-        i += 1
+        i.value += 1
         print(i)
     elif address == "/return" and args[0] == 1:
-        i -= 1
+        i.value -= 1
         print(i)
     #1e Élégie
-    if i == 2:
+    if i.value == 2:
         print('Glissandi')
         glissUpP.play()
     #2e Élégie
-    elif i == 3:
+    elif i.value == 3:
         print('Enveloppe dynamique')
         glissUpP.stop()
         transReset()
@@ -421,7 +426,7 @@ def stateChanges(address, *args):
         stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
         stop1.setNoiseAtt(0.2)
     #3 Élégie
-    elif i == 4:
+    elif i.value == 4:
         print('Interpolation de cloche')
         stopInterP.stop()
         voixHumaine()
@@ -429,13 +434,13 @@ def stateChanges(address, *args):
         stop1.setRamp(60)
         call2 = CallAfter(bell, time=5)
     #4e Élégie
-    elif i == 5:
+    elif i.value == 5:
         print('Tmul = 0')
         stop1.setTMul(0)
     #5e Élégie
-    elif i == 7:
+    elif i.value == 7:
         print('Interpolation de jeux')
-        reset()
+        #reset()
         stop1.setTMul(1)
         glissUpP.stop()
         transReset()
@@ -446,37 +451,48 @@ def stateChanges(address, *args):
         stopInterP.play()
     #6e Élégie 
     #7e Élégie
-    elif i == 10:
+    elif i.value == 10:
         print('7e Elegie - Non, plus d’imploration')
         randMulP.stop()
         setRamp(5)
         cornet()
     #8e Élégie
-    elif i == 11:
+    elif i.value == 11:
         print('7e Elegie - Non, plus d’imploration')
         randMulP.stop()
         setRamp(5)
         cornet()
     #9 
-    elif i == 12:
+    elif i.value == 12:
         print('8e Elegie - A pleins regardes, la créature')
         glissUpP.stop()
         setRamp(0.02)
         randMulP.play()
     #10 
-    elif i == 13:
+    elif i.value == 13:
         print('9e Elegie - Pourquoi, s’il est loisible aussi bien')
         randMulP.stop()
         glissContP.play()
-    elif i == 14:
+    elif i.value == 14:
         randMulP.start()
-    elif i == 15:    
+    elif i.value == 15:    
         print('Dissocié')
         randMulP.stop()
         bourdon()
         dissP.play()
 
+#print_i = Print(i, interval=2, message="Audio stream value")
+print("IP ADDRESS", ip_addr)
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
+
+send = OscSend(
+    input=[i],
+    port=8000,
+    address=["value"],
+    host="192.168.2.14",
+)
+
+send.setBufferRate(175)
 
 def mStateChanges(ctl, chan):
     global i, stopV, call1, call2
