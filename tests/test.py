@@ -8,25 +8,25 @@ s.boot()
 randDev = Sig(0)
 transV = Sig(0)
 
-p1Mul = Sig(0.588) #.588
-p2Mul = Sig(0.338) #.062
-p3Mul = Sig(0.665) #.412
-p4Mul = Sig(0.773) #.010
-p5Mul = Sig(0.512)# .092
-p6Mul = Sig(0.258)# .092
+p1Mul = Sig(0.5) #.588
+p2Mul = Sig(0.5) #.062
+p3Mul = Sig(0.5) #.412
+p4Mul = Sig(0.5) #.010
+p5Mul = Sig(0.5)# .092
+p6Mul = Sig(0.5)# .092
 
 note = NoteinSustain(scale=0)
 #note = Notein(poly=10, scale=0, first=0, last=127, channel=0, mul=1)
 #note.keyboard()
 
-p1Env = MidiAdsr(note['velocity'], attack=0.285, decay=0.02, sustain=0.446, release=0.1, mul=p1Mul)
-p2Env = MidiAdsr(note['velocity'], attack=0.45, decay=0.04, sustain=0.523, release=0.1, mul=p2Mul)
-p3Env = MidiAdsr(note['velocity'], attack=0.327, decay=0.085, sustain=0.404, release=0.1, mul=p3Mul)
-p4Env = MidiAdsr(note['velocity'], attack=0.338, decay=0.008, sustain=0.05, release=0.1, mul=p4Mul)
-p5Env = MidiAdsr(note['velocity'], attack=0.385, decay=0.008, sustain=0.05, release=0.1, mul=p5Mul)
-p6Env = MidiAdsr(note['velocity'], attack=0.277, decay=0.008, sustain=0.542, release=0.1, mul=p6Mul)
+p1Env = MidiAdsr(note['velocity'], attack=0.2, decay=0.2, sustain=0.2, release=0.2, mul=p1Mul)
+p2Env = MidiAdsr(note['velocity'], attack=0.2, decay=0.2, sustain=0.2, release=0.2, mul=p2Mul)
+p3Env = MidiAdsr(note['velocity'], attack=0.2, decay=0.2, sustain=0.2, release=0.2, mul=p3Mul)
+p4Env = MidiAdsr(note['velocity'], attack=0.2, decay=0.2, sustain=0.2, release=0.2, mul=p4Mul)
+p5Env = MidiAdsr(note['velocity'], attack=0.2, decay=0.2, sustain=0.2, release=0.2, mul=p5Mul)
+p6Env = MidiAdsr(note['velocity'], attack=0.2, decay=0.2, sustain=0.2, release=0.2, mul=p6Mul)
 
-noiseEnv = MidiAdsr(note['velocity'], attack=0.081, decay=0.146, sustain=0.7, release=0.1, mul=0.469)
+noiseEnv = MidiAdsr(note['velocity'], attack=0.081, decay=0.146, sustain=0.7, release=0.1, mul=0)
 
 freq = MToF(note['pitch'])
 

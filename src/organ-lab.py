@@ -6,7 +6,7 @@ from random import randint
 pa_list_devices()
 pm_list_devices()
 s = Server()
-s.setOutputDevice(1)
+s.setOutputDevice(2)
 s.setMidiOutputDevice(98)
 s.setMidiInputDevice(99)
 s.boot()
@@ -29,9 +29,9 @@ closedSumR = 0.25
 class Stop:
     def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans):
         # scale=1 to get pitch values in hertz
-        self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
-        #self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
-        #self.note.keyboard()
+        #self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
+        self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
+        self.note.keyboard()
         #self.partScRat = Sig(partScRat)
         self.ramp = Sig(ramp)
         self.inter = Sig(inter)
@@ -90,9 +90,9 @@ class Stop:
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=mMul)
         self.filt = ButLP(self.mix + self.nMix + self.sum + self.windF, 5000)
-        self.rev = STRev(self.mix, inpos=0.5, revtime=5, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
+        self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
         self.sp = Spectrum(self.rev.mix(1), size=8192)
-        self.pp = Print(self.amps, interval=2, message="Audio stream value")
+        #self.pp = Print(self.amps, interval=2, message="Audio stream value")
         
     def out(self):
         self.rev.out()
@@ -169,7 +169,7 @@ class Stop:
 
 #self, tMul, sMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans
 
-stop1 = Stop(0.8, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 12, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT).out()
+stop1 = Stop(0.8, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 0, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT).out()
 
 def bourdon():
     stop1.setMul([1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0])
@@ -372,11 +372,11 @@ def dynEnv():
 
 def dynEnvTest():
     print('Enveloppe dynamique')
-    stop1.setMul([0.5, 0.5, 0.5, 0, 0, 0, 0, 0])
-    stop1.setEnvAtt([0.2, 0.2, 0.2, 0.338, 0.385, 0.277, 0.1, 0.2])
-    stop1.setEnvDec([0.2, 0.2, 0.2, 0.008, 0.008, 0.008, 0.008, 0.008])
-    stop1.setEnvSus([0.2, 0.2, 0.2, 0.05, 0.05, 0.542, 0.05, 0.5])
-    stop1.setEnvRel([0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1])
+    stop1.setMul([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+    stop1.setEnvAtt([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
+    stop1.setEnvDec([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
+    stop1.setEnvSus([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
+    stop1.setEnvRel([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
     stop1.setNoiseAtt(0.05)
     stop1.setNoiseDec(0.05)
     stop1.setNoiseSus(0.05)
@@ -384,7 +384,7 @@ def dynEnvTest():
     stop1.setNoiseMul(0)
     stop1.setTMul(1)
 
-dynEnv()
+#dynEnvTest()
 
 i = 0
 
@@ -393,6 +393,90 @@ call2 = None
 
 mValue = Midictl(ctlnumber=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], minscale=0, maxscale=127, channel=6)
 pp = Print(mValue, method=1, message="Audio stream value")
+
+def stateChanges(address, *args):
+    global i, stopV, call1, call2
+    print(address)
+    print(args)
+    if address == "/continue" and args[0] == 1:
+        i += 1
+        print(i)
+    elif address == "/return" and args[0] == 1:
+        i -= 1
+        print(i)
+    #1e Élégie
+    if i == 2:
+        print('Glissandi')
+        glissUpP.play()
+    #2e Élégie
+    elif i == 3:
+        print('Enveloppe dynamique')
+        glissUpP.stop()
+        transReset()
+        stop1.setMul([0.588, 0.062, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
+        #principal()
+        stop1.setEnvAtt([0.181, 0.169, 0.073, 0.073, 0.088, 0.088, 0.1, 0.2])
+        stop1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
+        stop1.setEnvSus([0.6, 0.5, 0.7, 0.2, 0.5, 0.09, 0.05, 0.5])
+        stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+        stop1.setNoiseAtt(0.2)
+    #3 Élégie
+    elif i == 4:
+        print('Interpolation de cloche')
+        stopInterP.stop()
+        voixHumaine()
+        setInterpol(60)
+        stop1.setRamp(60)
+        call2 = CallAfter(bell, time=5)
+    #4e Élégie
+    elif i == 5:
+        print('Tmul = 0')
+        stop1.setTMul(0)
+    #5e Élégie
+    elif i == 7:
+        print('Interpolation de jeux')
+        reset()
+        stop1.setTMul(1)
+        glissUpP.stop()
+        transReset()
+        stop1.setRatio(0)
+        stop1.setIndex(1)
+        bourdon()
+        stop1.setRamp(5)
+        stopInterP.play()
+    #6e Élégie 
+    #7e Élégie
+    elif i == 10:
+        print('7e Elegie - Non, plus d’imploration')
+        randMulP.stop()
+        setRamp(5)
+        cornet()
+    #8e Élégie
+    elif i == 11:
+        print('7e Elegie - Non, plus d’imploration')
+        randMulP.stop()
+        setRamp(5)
+        cornet()
+    #9 
+    elif i == 12:
+        print('8e Elegie - A pleins regardes, la créature')
+        glissUpP.stop()
+        setRamp(0.02)
+        randMulP.play()
+    #10 
+    elif i == 13:
+        print('9e Elegie - Pourquoi, s’il est loisible aussi bien')
+        randMulP.stop()
+        glissContP.play()
+    elif i == 14:
+        randMulP.start()
+    elif i == 15:    
+        print('Dissocié')
+        randMulP.stop()
+        bourdon()
+        dissP.play()
+
+scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
 def mStateChanges(ctl, chan):
     global i, stopV, call1, call2
