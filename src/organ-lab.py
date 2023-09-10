@@ -7,7 +7,7 @@ from get_local_ip import get_local_ip
 pa_list_devices()
 pm_list_devices()
 s = Server()
-s.setOutputDevice(1)
+s.setOutputDevice(2)
 s.setMidiOutputDevice(98)
 s.setMidiInputDevice(99)
 s.boot()
@@ -389,6 +389,7 @@ def dynEnvTest():
 #dynEnvTest()
 
 i = Sig(0)
+vol = Sig(1)
 
 call1 = None
 call2 = None
@@ -397,12 +398,13 @@ mValue = Midictl(ctlnumber=[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], minscale=0, maxscale
 #pp = Print(mValue, method=1, message="Audio stream value")
 
 def stateChanges(address, *args):
-    global i, stopV, call1, call2
+    global i, vol, stopV, call1, call2
     print(address)
     print(args)
     print('i = ', i.value)
     if address == "/volume":
-        stop1.setTMul(args[0])
+        vol.value = args[0]
+        stop1.setTMul(vol.value)
     if address == "/continue" and args[0] == 1:
         i.value += 1
         print(i)
@@ -440,7 +442,7 @@ def stateChanges(address, *args):
     #5e Élégie
     elif i.value == 7:
         print('Interpolation de jeux')
-        #reset()
+        reset()
         stop1.setTMul(1)
         glissUpP.stop()
         transReset()
@@ -451,28 +453,37 @@ def stateChanges(address, *args):
         stopInterP.play()
     #6e Élégie 
     #7e Élégie
+    #8e Élégie
     elif i.value == 10:
-        print('7e Elegie - Non, plus d’imploration')
+        print('8e Elegie')
         randMulP.stop()
         setRamp(5)
-        cornet()
+        bourdon()
     #8e Élégie
     elif i.value == 11:
-        print('7e Elegie - Non, plus d’imploration')
+        print('9e Elegie')
         randMulP.stop()
         setRamp(5)
-        cornet()
+        bourdon()
     #9 
     elif i.value == 12:
         print('8e Elegie - A pleins regardes, la créature')
         glissUpP.stop()
         setRamp(0.02)
         randMulP.play()
+        reset()
+        stop1.setTMul(1)
+        glissUpP.stop()
+        transReset()
+        stop1.setRatio(0)
+        stop1.setIndex(1)
+        bourdon()
+        stop1.setRamp(5)
+        stopInterP.play()
     #10 
     elif i.value == 13:
         print('9e Elegie - Pourquoi, s’il est loisible aussi bien')
         randMulP.stop()
-        glissContP.play()
     elif i.value == 14:
         randMulP.start()
     elif i.value == 15:    
@@ -486,13 +497,13 @@ print("IP ADDRESS", ip_addr)
 scan = OscDataReceive(port=9002, address="*", function=stateChanges)
 
 send = OscSend(
-    input=[i],
-    port=8000,
-    address=["value"],
-    host="192.168.2.14",
+    input=[i, vol],
+    port=8996,
+    address=["counter", "volume"],
+    host="192.168.100.143",
 )
 
-send.setBufferRate(175)
+#send.setBufferRate(175)
 
 def mStateChanges(ctl, chan):
     global i, stopV, call1, call2
