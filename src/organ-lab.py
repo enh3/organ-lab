@@ -31,9 +31,9 @@ ip_addr = get_local_ip()
 class Stop:
     def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans):
         # scale=1 to get pitch values in hertz
-        #self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
-        self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
-        self.note.keyboard()
+        self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
+        #self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
+        #self.note.keyboard()
         #self.partScRat = Sig(partScRat)
         self.ramp = Sig(ramp)
         self.inter = Sig(inter)
@@ -420,13 +420,14 @@ def stateChanges(address, *args):
         print('Enveloppe dynamique')
         glissUpP.stop()
         transReset()
-        stop1.setMul([0.588, 0.062, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
+        #stop1.setMul([0.588, 0.062, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
         #principal()
-        stop1.setEnvAtt([0.181, 0.169, 0.073, 0.073, 0.088, 0.088, 0.1, 0.2])
-        stop1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
-        stop1.setEnvSus([0.6, 0.5, 0.7, 0.2, 0.5, 0.09, 0.05, 0.5])
-        stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
-        stop1.setNoiseAtt(0.2)
+        #stop1.setEnvAtt([0.181, 0.169, 0.073, 0.073, 0.088, 0.088, 0.1, 0.2])
+        #stop1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
+        #stop1.setEnvSus([0.6, 0.5, 0.7, 0.2, 0.5, 0.09, 0.05, 0.5])
+        #stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+        #stop1.setNoiseAtt(0.2)
+        dynEnv()
     #3 Élégie
     elif i.value == 4:
         print('Interpolation de cloche')
@@ -442,7 +443,8 @@ def stateChanges(address, *args):
     #5e Élégie
     elif i.value == 7:
         print('Interpolation de jeux')
-        reset()
+        #reset()
+        setInterpol(0)
         stop1.setTMul(1)
         glissUpP.stop()
         transReset()
@@ -453,37 +455,39 @@ def stateChanges(address, *args):
         stopInterP.play()
     #6e Élégie 
     #7e Élégie
+    elif i.value == 10:
+        print('8e Elegie')
+        stop1.setTMul(0)
     #8e Élégie
     elif i.value == 10:
         print('8e Elegie')
+        stop1.setTMul(1)
+        stopInterP.stop()
         randMulP.stop()
         setRamp(5)
         bourdon()
-    #8e Élégie
+    #9e Élégie
     elif i.value == 11:
         print('9e Elegie')
         randMulP.stop()
         setRamp(5)
         bourdon()
     #9 
-    elif i.value == 12:
-        print('8e Elegie - A pleins regardes, la créature')
+    #10 
+    elif i.value == 13:
+        print('10e Elegie')
         glissUpP.stop()
         setRamp(0.02)
         randMulP.play()
-        reset()
+        #reset()
         stop1.setTMul(1)
         glissUpP.stop()
         transReset()
         stop1.setRatio(0)
         stop1.setIndex(1)
         bourdon()
-        stop1.setRamp(5)
+        stop1.setRamp(10)
         stopInterP.play()
-    #10 
-    elif i.value == 13:
-        print('9e Elegie - Pourquoi, s’il est loisible aussi bien')
-        randMulP.stop()
     elif i.value == 14:
         randMulP.start()
     elif i.value == 15:    
@@ -494,7 +498,7 @@ def stateChanges(address, *args):
 
 #print_i = Print(i, interval=2, message="Audio stream value")
 print("IP ADDRESS", ip_addr)
-scan = OscDataReceive(port=9002, address="*", function=stateChanges)
+scan = OscDataReceive(port=9003, address="*", function=stateChanges)
 
 send = OscSend(
     input=[i, vol],
