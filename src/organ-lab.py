@@ -1,5 +1,5 @@
 from pyo import *
-from s047_midi_sustain_and_polyphony import NoteinSustain
+from midi_sustain import NoteinSustain
 from random import random
 from random import randint
 from get_local_ip import get_local_ip
