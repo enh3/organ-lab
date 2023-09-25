@@ -13,7 +13,10 @@ from pyo import *
 
 s = Server()
 pa_list_devices()
+s.setInputDevice(8)
+s.setOutputDevice(9)
 s.setMidiInputDevice(99)  # Open all devices.
+s.boot()
 
 VOICES_PER_CORE = 4
 
@@ -31,6 +34,7 @@ class Proc(multiprocessing.Process):
         super(Proc, self).__init__()
         self.daemon = True
         self.pipe = pipe
+        self.mid = mid
         #self.blackhole_output = blackhole_output
 
     def run(self):
@@ -38,7 +42,6 @@ class Proc(multiprocessing.Process):
         #self.server.setOutputDevice(2)
         self.server.deactivateMidi()
         self.server.boot().start()
-        self.mid = Notein(poly=VOICES_PER_CORE, scale=1, first=0, last=127)
         self.amp = MidiAdsr(self.mid["velocity"], 0.005, 0.1, 0.7, 0.5, mul=0.01)
         self.pit = self.mid["pitch"] * [uniform(0.99, 1.01) for i in range(40)]
         self.rc1 = RCOsc(self.pit, sharp=0.8, mul=self.amp).mix(1)
@@ -98,5 +101,7 @@ if __name__ == "__main__":
     raw = RawMidi(callback)
     #sAmp = Sig(s.getCurrentAmp())
     #sp = Spectrum(sAmp, size=8192)
+    mid = Notein(poly=VOICES_PER_CORE, scale=1, first=0, last=127)
+    mid.keyboard()
     s.gui(locals())
     

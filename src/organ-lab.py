@@ -1,17 +1,21 @@
-from pyo import *
 from midi_sustain import NoteinSustain
+import sys, time, multiprocessing
+from random import uniform
 from random import random
 from random import randint
+from pyo import *
 from get_local_ip import get_local_ip
 
 pa_list_devices()
 pm_list_devices()
 s = Server()
-s.setOutputDevice(2)
+s.setInputDevice(16)
+s.setOutputDevice(17)
 s.setMidiOutputDevice(98)
 s.setMidiInputDevice(99)
 s.boot()
 
+VOICES_PER_CORE = 4
 partList = list(range(1, 8, 1))
 transList = list(range(1, 8, 1))
 openSumT = 36
@@ -20,6 +24,14 @@ openSumR = 0.125
 closedSumR = 0.25
 ip_addr = get_local_ip()
 
+if sys.platform.startswith("linux"):
+    audio = "jack"
+elif sys.platform.startswith("darwin"):
+    audio = "portaudio"
+else:
+    print("Multicore examples don't run under Windows... Sorry!")
+    exit()
+    
 #path = "/Users/kjel/Documents/Ableton/Enregistrement_dorgue Project/Fichiers" + "2023-03-07_brdn_pres_avecBruit_chr_mono.wav"
 
 #sf = SfPlayer("/Users/kjel/Documents/Ableton/Élegies Project/2023-05-17_looped_env_dyn_norm.wav", speed=[1, 1], loop=True, mul=1).mix(1).out()
@@ -28,21 +40,24 @@ ip_addr = get_local_ip()
 
 #sfSpec = Spectrum(sf.mix(1), size=8192)
 
-class Stop:
-    def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans):
+note = Notein(poly=VOICES_PER_CORE, scale=1, first=0, last=127)
+note.keyboard()
+
+class Stop(multiprocessing.Process):
+    def __init__(self, pipe, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans, note):
+        super(Stop, self).__init__()
+        self.daemon = True
+        self.pipe = pipe
         # scale=1 to get pitch values in hertz
-        self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
-        #self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
-        #self.note.keyboard()
         #self.partScRat = Sig(partScRat)
         self.ramp = Sig(ramp)
         self.inter = Sig(inter)
         self.ratio = SigTo(ratio, self.inter)
         self.index = SigTo(index, self.inter)
-        self.noiseAtt = SigTo(noiseAtt, self.inter)
-        self.noiseDec = SigTo(noiseDec, self.inter)
-        self.noiseSus = SigTo(noiseSus, self.inter)
-        self.noiseRel = SigTo(noiseRel, self.inter)
+        self.noiseAtt = noiseAtt
+        self.noiseDec = noiseDec
+        self.noiseSus = noiseSus
+        self.noiseRel = noiseRel
         self.noiseMul = SigTo(noiseMul, self.inter)
         self.noiseFiltQ = SigTo(noiseFiltQ, self.inter)
         self.sumRat = SigTo(sumRat, self.inter)
@@ -59,11 +74,25 @@ class Stop:
         self.part = []
         self.snds = []
         self.mixed = []
-        self.velocity = [Clip(Sig(v), max=0.01, mul=100) for v in self.note['velocity']]
         self.partScEnv = [(0,partScRat), (2,1)]
-        self.partSc = MidiLinseg(self.velocity, self.partScEnv)
-        self.noiseEnv = MidiAdsr(self.note['velocity'], attack=noiseAtt, decay=noiseDec, sustain=noiseSus, release=noiseRel)
+        self.part = part
+        self.mul = mul
+        self.att = att
+        self.dec = dec
+        self.sus = sus
+        self.rel = rel
+        self.rand = rand
+        self.mMul = mMul
+        self.note = note
+
+    def run(self):
+        self.server = Server(audio=audio)
+        self.server.deactivateMidi()
+        self.server.boot().start()
+        self.noiseEnv = MidiAdsr(self.note["velocity"], attack=self.noiseAtt, decay=self.noiseDec, sustain=self.noiseSus, release=self.noiseRel)
         self.noise = PinkNoise(1.5) * self.noiseEnv
+        self.velocity = [Clip(Sig(v), max=0.01, mul=100) for v in self.note['velocity']]
+        self.partSc = MidiLinseg(self.velocity, self.partScEnv)
         self.n1Harm = Resonx(self.noise, freq=(self.note['pitch']), q=1, mul=0.5)
         self.n3Harm = Resonx(self.noise, freq=(self.note['pitch']*(22/8)), q=8, mul=1)
         self.n5Harm = Resonx(self.noise, freq=(self.note['pitch']*(8/3)), q=3, mul=0.5)
@@ -77,27 +106,37 @@ class Stop:
         #self.harmT = HarmTable([0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
         #self.harmOsc = Osc(table=self.harmT, freq=10**self.partSc) * (MToF(FToM(self.note['pitch'])-0.15)) + Randi(-rand, rand, 5) + self.trans[-1] + self.mod
         self.sum = SumOsc(freq=(MToF(FToM(self.note['pitch'])-0.15+self.sumTrans) + self.trans), ratio=self.sumRat, index=0.3, mul=self.noiseEnv*self.sumMul)
+        #self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
+        #self.note.keyboard()
         # Handles the user polyphony independently to avoid mixed polyphony concerns (self.note already contains 10 streams)
-        for i in range(len(part)):
+        for i in range(len(self.part)):
             # SigTo to avoid clicks
-            self.amps.append(SigTo(mul[i], time=self.ramp))
-            self.att.append(SigTo(att[i], time=self.inter))
-            self.dec.append(SigTo(dec[i], time=self.inter))
-            self.sus.append(SigTo(sus[i], time=self.inter))
-            self.rel.append(SigTo(rel[i], time=self.inter))
-            self.envs.append(MidiAdsr(self.note['velocity'], attack=att[i], decay=dec[i], sustain=sus[i], release=rel[i], mul=self.amps[-1]))
+            self.amps.append(SigTo(self.mul[i], time=self.ramp))
+            self.att.append(SigTo(self.att[i], time=self.inter))
+            self.dec.append(SigTo(self.dec[i], time=self.inter))
+            self.sus.append(SigTo(self.sus[i], time=self.inter))
+            self.rel.append(SigTo(self.rel[i], time=self.inter))
+            self.envs.append(MidiAdsr(self.note['velocity'], attack=self.att[i], decay=self.dec[i], sustain=self.sus[i], release=self.rel[i], mul=self.amps[-1]))
             #self.trans.append(SigTo(trans, time=0.025))
-            self.part.append(SigTo(part[i], time=0.2))
-            self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch']-0.15))) + Randi(-rand, rand, 5) + self.trans + self.mod, mul=self.envs[-1]))
+            self.part.append(SigTo(self.part[i], time=0.2))
+            self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch']-0.15))) + Randi(-self.rand, self.rand, 5) + self.trans + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
-        self.mix = Mix(self.mixed, 2, mul=mMul)
+        self.mix = Mix(self.mixed, 2, mul=self.mMul)
         self.filt = ButLP(self.mix + self.nMix + self.sum + self.windF, 5000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
         self.sp = Spectrum(self.rev.mix(1), size=8192)
+        self.rev.out()
         #self.pp = Print(self.amps, interval=2, message="Audio stream value")
+
+        while True:
+            if self.pipe.poll():
+                data = self.pipe.recv()
+                self.server.addMidiEvent(*data)
+            time.sleep(0.001)
+
+        self.server.stop()
         
     def out(self):
-        self.rev.out()
         return self
         
     def setTMul(self, x):
@@ -169,61 +208,98 @@ class Stop:
     def setNoiseFiltQ(self, x):
         self.noiseFiltQ.value = x
 
+
+if __name__ == "__main__":
+    main1, child1 = multiprocessing.Pipe()
+    main2, child2 = multiprocessing.Pipe()
+    main3, child3 = multiprocessing.Pipe()
+    main4, child4 = multiprocessing.Pipe()
+    mains = [main1, main2, main3, main4]
+    #blackhole_device_name = "BlackHole 16ch"
+    #blackhole_output = Server(audio=blackhole_device_name).boot().start().out()
+    p1 = Stop(child1, 0.8, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 0, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT, note)
+    p2 = Stop(child2, 0.8, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 0, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT, note)
+    p3 = Stop(child3, 0.8, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 0, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT, note)
+    p4 = Stop(child4, 0.8, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 0, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT, note)
+    p1.start()
+    p2.start()
+    p3.start()
+    p4.start()
+
+    playing = {0: [], 1: [], 2: [], 3: []}
+    currentcore = 0
+
+    def callback(status, data1, data2):
+        global currentcore
+        if status == 0x80 or status == 0x90 and data2 == 0:
+            for i in range(4):
+                if data1 in playing[i]:
+                    playing[i].remove(data1)
+                    mains[i].send([status, data1, data2])
+                    break
+        elif status == 0x90:
+            for i in range(4):
+                currentcore = (currentcore + 1) % 4
+                if len(playing[currentcore]) < VOICES_PER_CORE:
+                    playing[currentcore].append(data1)
+                    mains[currentcore].send([status, data1, data2])
+                    break
+
 #self, tMul, sMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans
 
-stop1 = Stop(0.8, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 0, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT).out()
+#p1.run(0.8, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 0, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT)
 
 def bourdon():
-    stop1.setMul([1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0])
-    stop1.setEnvAtt([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
-    stop1.setEnvDec([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
-    stop1.setEnvSus([0.9]*20)
-    stop1.setEnvRel([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
-    stop1.setRatio(0)
-    stop1.setIndex(1)
-    stop1.setNoiseAtt(0.001)
-    stop1.setNoiseDec(0.146)
-    stop1.setNoiseSus(0.70)
-    stop1.setNoiseRel(0.1)    
-    stop1.setNoiseMul(4)
-    stop1.setNoiseFiltQ(10)
-    #stop1.setPartSc(1.05)
-    stop1.setPartScRat(1)
+    p1.setMul([1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0])
+    p1.setEnvAtt([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
+    p1.setEnvDec([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
+    p1.setEnvSus([0.9]*20)
+    p1.setEnvRel([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
+    p1.setRatio(0)
+    p1.setIndex(1)
+    p1.setNoiseAtt(0.001)
+    p1.setNoiseDec(0.146)
+    p1.setNoiseSus(0.70)
+    p1.setNoiseRel(0.1)    
+    p1.setNoiseMul(4)
+    p1.setNoiseFiltQ(10)
+    #p1.setPartSc(1.05)
+    p1.setPartScRat(1)
     print(bourdon)
     
 def principal():
-    stop1.setMul([1, 0.4, 0.3, 0.2, 0.2, 0.08, 0.04, 0.06, 0.004, 0.003, 0.003, 0.003, 0.003, 0.002, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001])
-    stop1.setEnvAtt([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
-    stop1.setEnvRel([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
+    p1.setMul([1, 0.4, 0.3, 0.2, 0.2, 0.08, 0.04, 0.06, 0.004, 0.003, 0.003, 0.003, 0.003, 0.002, 0.001, 0.001, 0.001, 0.001, 0.001, 0.001])
+    p1.setEnvAtt([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
+    p1.setEnvRel([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
     print(principal)
     
 def voixHumaine():
-    stop1.setMul([0.3, 0.9, 0.9, 0.9, 0.7, 0.9, 0.9, 0.01, 0.04, 0.3, 0.003, 0.003, 0.003, 0.002, 0.1, 0.001, 0.001, 0, 0, 0.002])
-    stop1.setEnvAtt([0.2, 0.3, 0.2, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
-    stop1.setEnvDec([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
-    stop1.setEnvSus([1]*20)
-    stop1.setEnvRel([0.5, 0.3, 0.6, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
+    p1.setMul([0.3, 0.9, 0.9, 0.9, 0.7, 0.9, 0.9, 0.01, 0.04, 0.3, 0.003, 0.003, 0.003, 0.002, 0.1, 0.001, 0.001, 0, 0, 0.002])
+    p1.setEnvAtt([0.2, 0.3, 0.2, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
+    p1.setEnvDec([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
+    p1.setEnvSus([1]*20)
+    p1.setEnvRel([0.5, 0.3, 0.6, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
     print(voixHumaine)
     
 def cornet():
-    stop1.setMul([0, 0.4, 0.3, 0.6, 0.5, 0.09, 0, 0.09, 0.004, 0.2, 0, 0.1, 0, 0.002, 0.01, 0.08, 0, 0, 0, 0.001])
-    stop1.setEnvAtt([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
-    stop1.setEnvRel([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
+    p1.setMul([0, 0.4, 0.3, 0.6, 0.5, 0.09, 0, 0.09, 0.004, 0.2, 0, 0.1, 0, 0.002, 0.01, 0.08, 0, 0, 0, 0.001])
+    p1.setEnvAtt([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
+    p1.setEnvRel([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
     print(cornet)
     
 def randPart():
     x = list(range(1, 21, 1))
     for i in range(len(partList)-1):
         x[i+1] = partList[i+1] + (((random())*2)-1)*1 
-    stop1.setPart(x)
+    p1.setPart(x)
     print(randPart)
 
 def randMul():
-    stop1.setMul([random(), random()*0.5, random()*0.3, random()*0.2, random()*0.1, random()*0.05, random()*0.03, random()*0.01, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005])
+    p1.setMul([random(), random()*0.5, random()*0.3, random()*0.2, random()*0.1, random()*0.05, random()*0.03, random()*0.01, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005])
     print(randMul)
     
 def setRamp(x):
-    stop1.setRamp(x)
+    p1.setRamp(x)
     
 glissC = [0 for i in range(8)]
 
@@ -232,7 +308,7 @@ def glissUp():
     for i in range(len(glissC)):
         glissC[i] == 0
     if glissC[0] < 600:
-        stop1.setTrans(glissC)
+        p1.setTrans(glissC)
         for i in range(len(glissC)):
             glissC[i] = glissC[i] + 2
     else:
@@ -243,7 +319,7 @@ glissUpC = None
 def glissUp2():
     x = Linseg([(0,0),(90,600)])
     x.play(delay=0).graph()
-    stop1.setTrans(x)
+    p1.setTrans(x)
     print("gliss2")
     
 glissC3 = 0
@@ -251,7 +327,7 @@ def glissUp3():
     global glissC3
     glissC3 == 0
     if glissC3 < 600:
-        stop1.setTrans(glissC3)
+        p1.setTrans(glissC3)
         glissC3 = glissC3 + 0.2
     else:
         glissC3 = 0
@@ -261,7 +337,7 @@ def glissCont():
     for i in range(len(glissC)):
         glissC[i] == 0
     if glissC[0] < 600:
-        stop1.setTrans(glissC)
+        p1.setTrans(glissC)
         for i in range(len(glissC)):
             if i % 2 == 0:
                 glissC[i] = glissC[i] + 0.4
@@ -277,7 +353,7 @@ def transReset():
     global glissC
     for i in range(len(glissC)):
         glissC[i] = 0
-    stop1.setTrans(glissC)
+    p1.setTrans(glissC)
 
 dissCount = 0
 def dissocie(x):
@@ -287,10 +363,10 @@ def dissocie(x):
         dissCount += 1
         print(dissCount)
         if dissCount > 1:
-            stop1.setMul([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+            p1.setMul([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
             print("set0")
         elif dissCount == 1 :
-            stop1.setMul([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
+            p1.setMul([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
             print("setnon0")
     if dissCount == 4:
         dissCount = 0
@@ -302,21 +378,21 @@ bellCall4 = None
 
 def bell():
     global bellCall1, bellCall2, bellCall3, bellCall4 
-    bellCall1 = CallAfter(stop1.setEnvAtt, time=60, arg=(.001, .001, .001, .001, 0.001, 0.001, 0.0001, 0.0006, 0.0007, 0.0005, 0.0006, 0.0003, 0.0005, 0.0003, 0.0006, 0.0005, 0.0004, 0.0002, 0.0001, 0.0001)).play()
-    bellCall2 = CallAfter(stop1.setEnvDec, time=60, arg=(1.3, .05, .02, 0, 0, 0.04, .004, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04)).play()
-    bellCall3 = CallAfter(stop1.setEnvSus, time=60, arg=(.4, .1, .02, .01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .002, 0.002)).play()
-    bellCall4 = CallAfter(stop1.setEnvRel, time=60, arg=(2, 0.1, 0.1, .01, .03, 0.4, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.4, .04, 0.04, .04, 0.4)).play()
-    stop1.setMul([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
-    stop1.setRatio(0.43982735)
-    stop1.setIndex(4)
-    stop1.setNoiseAtt(0.001)
-    stop1.setNoiseDec(0.1)
-    stop1.setNoiseSus(0.01)
-    stop1.setNoiseRel(0.1)    
-    stop1.setNoiseMul(0.9)
-    stop1.setNoiseFiltQ(4)
-    #stop1.setPartSc(1.05)
-    stop1.setPartScRat(1.02)
+    bellCall1 = CallAfter(p1.setEnvAtt, time=60, arg=(.001, .001, .001, .001, 0.001, 0.001, 0.0001, 0.0006, 0.0007, 0.0005, 0.0006, 0.0003, 0.0005, 0.0003, 0.0006, 0.0005, 0.0004, 0.0002, 0.0001, 0.0001)).play()
+    bellCall2 = CallAfter(p1.setEnvDec, time=60, arg=(1.3, .05, .02, 0, 0, 0.04, .004, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04)).play()
+    bellCall3 = CallAfter(p1.setEnvSus, time=60, arg=(.4, .1, .02, .01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .002, 0.002)).play()
+    bellCall4 = CallAfter(p1.setEnvRel, time=60, arg=(2, 0.1, 0.1, .01, .03, 0.4, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.4, .04, 0.04, .04, 0.4)).play()
+    p1.setMul([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
+    p1.setRatio(0.43982735)
+    p1.setIndex(4)
+    p1.setNoiseAtt(0.001)
+    p1.setNoiseDec(0.1)
+    p1.setNoiseSus(0.01)
+    p1.setNoiseRel(0.1)    
+    p1.setNoiseMul(0.9)
+    p1.setNoiseFiltQ(4)
+    #p1.setPartSc(1.05)
+    p1.setPartScRat(1.02)
     print(bell)
     
 babCount = 0
@@ -333,15 +409,15 @@ def bourdonAndBell(x):
     print(babCount)
     
 def setInterpol(x):
-    stop1.setInter(x)
+    p1.setInter(x)
     
 def autom3():
     x = Linseg([(0,0),(80,0.01)])
     y = Linseg([(0,0),(80,5)])
     x.play(delay=0).graph()
     y.play(delay=0).graph()
-    stop1.setRatio(x)
-    stop1.setIndex(y)
+    p1.setRatio(x)
+    p1.setIndex(y)
     
 stopInterPRand = Sig(1)
 def stopInter():
@@ -361,30 +437,30 @@ def stopInter():
 
 def dynEnv():
     print('Enveloppe dynamique')
-    stop1.setMul([0.588, 0.338, 0.665, 0.773, 0.512, 0.258, 0, 0])
-    stop1.setEnvAtt([0.285, 0.450, 0.327, 0.338, 0.385, 0.277, 0.1, 0.2])
-    stop1.setEnvDec([0.02, 0.04, 0.085, 0.008, 0.008, 0.008, 0.008, 0.008])
-    stop1.setEnvSus([0.446, 0.523, 0.404, 0.05, 0.05, 0.542, 0.05, 0.5])
-    stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
-    stop1.setNoiseAtt(0.081)
-    stop1.setNoiseDec(0.146)
-    stop1.setNoiseSus(0.7)
-    stop1.setNoiseRel(0.1)
-    stop1.setNoiseMul(0.469)
+    p1.setMul([0.588, 0.338, 0.665, 0.773, 0.512, 0.258, 0, 0])
+    p1.setEnvAtt([0.285, 0.450, 0.327, 0.338, 0.385, 0.277, 0.1, 0.2])
+    p1.setEnvDec([0.02, 0.04, 0.085, 0.008, 0.008, 0.008, 0.008, 0.008])
+    p1.setEnvSus([0.446, 0.523, 0.404, 0.05, 0.05, 0.542, 0.05, 0.5])
+    p1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+    p1.setNoiseAtt(0.081)
+    p1.setNoiseDec(0.146)
+    p1.setNoiseSus(0.7)
+    p1.setNoiseRel(0.1)
+    p1.setNoiseMul(0.469)
 
 def dynEnvTest():
     print('Enveloppe dynamique')
-    stop1.setMul([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
-    stop1.setEnvAtt([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
-    stop1.setEnvDec([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
-    stop1.setEnvSus([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
-    stop1.setEnvRel([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
-    stop1.setNoiseAtt(0.05)
-    stop1.setNoiseDec(0.05)
-    stop1.setNoiseSus(0.05)
-    stop1.setNoiseRel(0.05)
-    stop1.setNoiseMul(0)
-    stop1.setTMul(1)
+    p1.setMul([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
+    p1.setEnvAtt([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
+    p1.setEnvDec([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
+    p1.setEnvSus([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
+    p1.setEnvRel([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
+    p1.setNoiseAtt(0.05)
+    p1.setNoiseDec(0.05)
+    p1.setNoiseSus(0.05)
+    p1.setNoiseRel(0.05)
+    p1.setNoiseMul(0)
+    p1.setTMul(1)
 
 #dynEnvTest()
 
@@ -404,7 +480,7 @@ def stateChanges(address, *args):
     print('i = ', i.value)
     if address == "/volume":
         vol.value = args[0]
-        stop1.setTMul(vol.value)
+        p1.setTMul(vol.value)
     if address == "/continue" and args[0] == 1:
         i.value += 1
         print(i)
@@ -420,13 +496,13 @@ def stateChanges(address, *args):
         print('Enveloppe dynamique')
         glissUpP.stop()
         transReset()
-        #stop1.setMul([0.588, 0.062, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
+        #p1.setMul([0.588, 0.062, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
         #principal()
-        #stop1.setEnvAtt([0.181, 0.169, 0.073, 0.073, 0.088, 0.088, 0.1, 0.2])
-        #stop1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
-        #stop1.setEnvSus([0.6, 0.5, 0.7, 0.2, 0.5, 0.09, 0.05, 0.5])
-        #stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
-        #stop1.setNoiseAtt(0.2)
+        #p1.setEnvAtt([0.181, 0.169, 0.073, 0.073, 0.088, 0.088, 0.1, 0.2])
+        #p1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
+        #p1.setEnvSus([0.6, 0.5, 0.7, 0.2, 0.5, 0.09, 0.05, 0.5])
+        #p1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+        #p1.setNoiseAtt(0.2)
         dynEnv()
     #3 Élégie
     elif i.value == 4:
@@ -434,34 +510,34 @@ def stateChanges(address, *args):
         stopInterP.stop()
         voixHumaine()
         setInterpol(60)
-        stop1.setRamp(60)
+        p1.setRamp(60)
         call2 = CallAfter(bell, time=5)
     #4e Élégie
     elif i.value == 5:
         print('Tmul = 0')
-        stop1.setTMul(0)
+        p1.setTMul(0)
     #5e Élégie
     elif i.value == 7:
         print('Interpolation de jeux')
         #reset()
         setInterpol(0)
-        stop1.setTMul(1)
+        p1.setTMul(1)
         glissUpP.stop()
         transReset()
-        stop1.setRatio(0)
-        stop1.setIndex(1)
+        p1.setRatio(0)
+        p1.setIndex(1)
         bourdon()
-        stop1.setRamp(5)
+        p1.setRamp(5)
         stopInterP.play()
     #6e Élégie 
     #7e Élégie
     elif i.value == 10:
         print('8e Elegie')
-        stop1.setTMul(0)
+        p1.setTMul(0)
     #8e Élégie
     elif i.value == 10:
         print('8e Elegie')
-        stop1.setTMul(1)
+        p1.setTMul(1)
         stopInterP.stop()
         randMulP.stop()
         setRamp(5)
@@ -480,13 +556,13 @@ def stateChanges(address, *args):
         setRamp(0.02)
         randMulP.play()
         #reset()
-        stop1.setTMul(1)
+        p1.setTMul(1)
         glissUpP.stop()
         transReset()
-        stop1.setRatio(0)
-        stop1.setIndex(1)
+        p1.setRatio(0)
+        p1.setIndex(1)
         bourdon()
-        stop1.setRamp(10)
+        p1.setRamp(10)
         stopInterP.play()
     elif i.value == 14:
         randMulP.start()
@@ -521,35 +597,35 @@ def mStateChanges(ctl, chan):
             print('Enveloppe dynamique')
             glissUpP.stop()
             transReset()
-            stop1.setMul([0.588, 0.062, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
+            p1.setMul([0.588, 0.062, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
             #principal()
-            stop1.setEnvAtt([0.281, 0.269, 0.173, 0.173, 0.188, 0.188, 0.1, 0.2])
-            stop1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
-            stop1.setEnvSus([0.6, 0.5, 0.7, 0.2, 0.5, 0.09, 0.05, 0.5])
-            stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
-            stop1.setNoiseAtt(0.2)
+            p1.setEnvAtt([0.281, 0.269, 0.173, 0.173, 0.188, 0.188, 0.1, 0.2])
+            p1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
+            p1.setEnvSus([0.6, 0.5, 0.7, 0.2, 0.5, 0.09, 0.05, 0.5])
+            p1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+            p1.setNoiseAtt(0.2)
         #3 Élégie
         elif ctl == 3:
             print('Interpolation de cloche')
             stopInterP.stop()
             voixHumaine()
             setInterpol(60)
-            stop1.setRamp(60)
+            p1.setRamp(60)
             call2 = CallAfter(bell, time=5)
         #4e Élégie
         elif ctl == 4:
             print('Tmul = 0')
-            stop1.setTMul(0)
+            p1.setTMul(0)
         #5e Élégie
         elif ctl == 5:
             print('Interpolation de jeux')
-            stop1.setTMul(1)
+            p1.setTMul(1)
             glissUpP.stop()
             transReset()
-            stop1.setRatio(0)
-            stop1.setIndex(1)
+            p1.setRatio(0)
+            p1.setIndex(1)
             bourdon()
-            stop1.setRamp(5)
+            p1.setRamp(5)
             stopInterP.play()
         #6e Élégie 
         #7e Élégie
@@ -587,13 +663,13 @@ mScan = CtlScan2(mStateChanges, toprint=False)
 
 
 '''
-stop1.setMul([1, 0.5, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
+p1.setMul([1, 0.5, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
 #principal()
-stop1.setEnvAtt([0.181, 0.169, 0.073, 0.073, 0.088, 0.088, 0.1, 0.2])
-stop1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
-stop1.setEnvSus([1, 0.4, 0.6, 0.35, 0.5, 0.25, 0.04, 0.5])
-stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
-stop1.setNoiseAtt(0.2)
+p1.setEnvAtt([0.181, 0.169, 0.073, 0.073, 0.088, 0.088, 0.1, 0.2])
+p1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
+p1.setEnvSus([1, 0.4, 0.6, 0.35, 0.5, 0.25, 0.04, 0.5])
+p1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+p1.setNoiseAtt(0.2)
 '''
 
 listTest = list(range(1, 20, 1))
@@ -604,20 +680,20 @@ def automEnv(x):
     for i in listTest:
         autEnv = Linseg([(0,0),(10,x[i])])
     autEnv.play()
-    stop1.setEnvAtt(autEnv)
+    p1.setEnvAtt(autEnv)
 
 '''
 principal()
-stopP = stop1.setPart([1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0])
-stop1.setNoiseAtt([3, 4, 2, 2.5, 3, .4, .5, .3])
-stop1.setNoiseDec([3, 4, 2, 0.3, 0.6, .4, .5, .3])
-stop1.setEnvAtt([3, 4, 2, 2.5, 3, .4, .5, .3])
-stop1.setEnvDec([3, 4, 2, 0.3, 0.6, .4, .5, .3])
-stopV = stop1.vel()
+stopP = p1.setPart([1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0])
+p1.setNoiseAtt([3, 4, 2, 2.5, 3, .4, .5, .3])
+p1.setNoiseDec([3, 4, 2, 0.3, 0.6, .4, .5, .3])
+p1.setEnvAtt([3, 4, 2, 2.5, 3, .4, .5, .3])
+p1.setEnvDec([3, 4, 2, 0.3, 0.6, .4, .5, .3])
+stopV = p1.vel()
 '''
 
 dummy = Sig(0)
-trigDiss = Thresh(stop1.vel(), threshold=100, dir=0)
+#trigDiss = Thresh(p1.vel(), threshold=100, dir=0)
 
 randPartP = Pattern(function=randPart, time=30)
 randMulP = Pattern(function=randMul, time=3)
@@ -625,7 +701,7 @@ glissUpP = Pattern(function=glissUp, time=0.12)
 glissUpP3 = Pattern(function=glissUp3, time=1)
 dissP = Pattern(function=dissocie, time=0.5)
 babP = Pattern(function=bourdonAndBell, time=0.2, arg=0.2)
-tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
+#tr = TrigFunc(trigDiss, function=dissocie, arg=p1.vel())
 glissContP = Pattern(function=glissCont, time=0.1)
 stopInterP = Pattern(function=stopInter, time=Sig(stopInterPRand))
 
@@ -649,5 +725,6 @@ path = os.path.join(os.path.expanduser("~"), "Desktop", "noise4-rev.wav")
 
 s.recordOptions(filename=path, fileformat=0, sampletype=1)
 
+raw = RawMidi(callback)
 s.gui(locals())
 
