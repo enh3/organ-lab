@@ -9,7 +9,7 @@ pm_list_devices()
 s = Server()
 s.setOutputDevice(1)
 s.setMidiOutputDevice(98)
-s.setMidiInputDevice(0)
+s.setMidiInputDevice(99)
 s.boot()
 
 partList = list(range(1, 8, 1))
@@ -20,21 +20,13 @@ openSumR = 0.125
 closedSumR = 0.25
 ip_addr = get_local_ip()
 
-#path = "/Users/kjel/Documents/Ableton/Enregistrement_dorgue Project/Fichiers" + "2023-03-07_brdn_pres_avecBruit_chr_mono.wav"
-
-#sf = SfPlayer("/Users/kjel/Documents/Ableton/Élegies Project/2023-05-17_looped_env_dyn_norm.wav", speed=[1, 1], loop=True, mul=1).mix(1).out()
-
-#sf = SfPlayer("/Users/kjel/Documents/Ableton/Élegies Project/Audio/Bruit_de_soufflerie/2023-03-06_bruit_de_souf_loin.wav", speed=1, loop=True, mul=0.05).mix(2).out()
-
-#sfSpec = Spectrum(sf.mix(1), size=8192)
-
 class Stop:
     def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans):
         # scale=1 to get pitch values in hertz
-        self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=6)
+        self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=0)
         #self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
         #self.note.keyboard()
-        #self.partScRat = Sig(partScRat)
+        self.partScRat = Sig(partScRat)
         self.ramp = Sig(ramp)
         self.inter = Sig(inter)
         self.ratio = SigTo(ratio, self.inter)
@@ -64,18 +56,16 @@ class Stop:
         self.partSc = MidiLinseg(self.velocity, self.partScEnv)
         self.noiseEnv = MidiAdsr(self.note['velocity'], attack=noiseAtt, decay=noiseDec, sustain=noiseSus, release=noiseRel)
         self.noise = PinkNoise(1.5) * self.noiseEnv
-        self.n1Harm = Resonx(self.noise, freq=(self.note['pitch']), q=1, mul=0.5)
-        self.n3Harm = Resonx(self.noise, freq=(self.note['pitch']*(22/8)), q=8, mul=1)
-        self.n5Harm = Resonx(self.noise, freq=(self.note['pitch']*(8/3)), q=3, mul=0.5)
-        self.n10Harm = Resonx(self.noise, freq=(self.note['pitch']*(16/3)), q=3, mul=0.1)
+        self.n1Harm = Resonx(self.noise, freq=(self.note['pitch']), q=self.noiseFiltQ, mul=0.5)
+        self.n3Harm = Resonx(self.noise, freq=(self.note['pitch']*(22/8)), q=self.noiseFiltQ, mul=1)
+        self.n5Harm = Resonx(self.noise, freq=(self.note['pitch']*(8/3)), q=self.noiseFiltQ, mul=0.5)
+        self.n10Harm = Resonx(self.noise, freq=(self.note['pitch']*(16/3)), q=self.noiseFiltQ, mul=0.1)
         self.nMix = Mix(self.n1Harm+self.n3Harm+self.n5Harm+self.n10Harm, 1, mul=self.noiseMul)
         self.wind = PinkNoise(0.001) * self.noiseEnv
         self.windF = Tone(self.wind, 950)
         self.fmod = self.note['pitch'] * self.ratio
         self.amod = self.fmod * self.index
         self.mod = Sine(self.fmod, mul=self.amod)
-        #self.harmT = HarmTable([0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
-        #self.harmOsc = Osc(table=self.harmT, freq=10**self.partSc) * (MToF(FToM(self.note['pitch'])-0.15)) + Randi(-rand, rand, 5) + self.trans[-1] + self.mod
         self.sum = SumOsc(freq=(MToF(FToM(self.note['pitch'])-0.15+self.sumTrans) + self.trans), ratio=self.sumRat, index=0.3, mul=self.noiseEnv*self.sumMul)
         # Handles the user polyphony independently to avoid mixed polyphony concerns (self.note already contains 10 streams)
         for i in range(len(part)):
@@ -86,7 +76,6 @@ class Stop:
             self.sus.append(SigTo(sus[i], time=self.inter))
             self.rel.append(SigTo(rel[i], time=self.inter))
             self.envs.append(MidiAdsr(self.note['velocity'], attack=att[i], decay=dec[i], sustain=sus[i], release=rel[i], mul=self.amps[-1]))
-            #self.trans.append(SigTo(trans, time=0.025))
             self.part.append(SigTo(part[i], time=0.2))
             self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch']-0.15))) + Randi(-rand, rand, 5) + self.trans + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
@@ -102,6 +91,9 @@ class Stop:
         
     def setTMul(self, x):
         self.tMul.value = x
+
+    def setSumMul(self, x):
+        self.sumMul.value = x
         
     def setInter(self, x):
         self.inter.value = x
@@ -171,7 +163,7 @@ class Stop:
 
 #self, tMul, sMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans
 
-stop1 = Stop(0.8, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 10, 0, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT).out()
+stop1 = Stop(0.8, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 3, 0, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT).out()
 
 def bourdon():
     stop1.setMul([1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0])
@@ -302,10 +294,10 @@ bellCall4 = None
 
 def bell():
     global bellCall1, bellCall2, bellCall3, bellCall4 
-    bellCall1 = CallAfter(stop1.setEnvAtt, time=60, arg=(.001, .001, .001, .001, 0.001, 0.001, 0.0001, 0.0006, 0.0007, 0.0005, 0.0006, 0.0003, 0.0005, 0.0003, 0.0006, 0.0005, 0.0004, 0.0002, 0.0001, 0.0001)).play()
-    bellCall2 = CallAfter(stop1.setEnvDec, time=60, arg=(1.3, .05, .02, 0, 0, 0.04, .004, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04)).play()
-    bellCall3 = CallAfter(stop1.setEnvSus, time=60, arg=(.4, .1, .02, .01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .002, 0.002)).play()
-    bellCall4 = CallAfter(stop1.setEnvRel, time=60, arg=(2, 0.1, 0.1, .01, .03, 0.4, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.4, .04, 0.04, .04, 0.4)).play()
+    bellCall1 = CallAfter(stop1.setEnvAtt, time=120, arg=(.001, .001, .001, .001, 0.001, 0.001, 0.0001, 0.0006, 0.0007, 0.0005, 0.0006, 0.0003, 0.0005, 0.0003, 0.0006, 0.0005, 0.0004, 0.0002, 0.0001, 0.0001)).play()
+    bellCall2 = CallAfter(stop1.setEnvDec, time=120, arg=(1.3, .05, .02, 0, 0, 0.04, .004, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04)).play()
+    bellCall3 = CallAfter(stop1.setEnvSus, time=120, arg=(.4, .1, .02, .01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .002, 0.002)).play()
+    bellCall4 = CallAfter(stop1.setEnvRel, time=120, arg=(2, 0.1, 0.1, .01, .03, 0.4, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.4, .04, 0.04, .04, 0.4)).play()
     stop1.setMul([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
     stop1.setRatio(0.43982735)
     stop1.setIndex(4)
@@ -361,39 +353,25 @@ def stopInter():
 
 def dynEnv():
     print('Enveloppe dynamique')
-    stop1.setMul([0.588, 0.338, 0.665, 0.773, 0.512, 0.258, 0, 0])
-    stop1.setEnvAtt([0.285, 0.450, 0.327, 0.338, 0.385, 0.277, 0.1, 0.2])
-    stop1.setEnvDec([0.02, 0.04, 0.085, 0.008, 0.008, 0.008, 0.008, 0.008])
-    stop1.setEnvSus([0.446, 0.523, 0.404, 0.05, 0.05, 0.542, 0.05, 0.5])
-    stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
+    stop1.setPart([1, 2, 3, 4, 4, 4, 0, 0])
+    stop1.setMul([0.588, 0.338, 0.665, 0.773, 0.512, 0, 0, 0])
+    stop1.setEnvAtt([0.285, 0.450, 0.327, 0.338, 0.385, 0.277, 0, 0])
+    stop1.setEnvDec([0.02, 0.04, 0.085, 0.008, 0.008, 0.008, 0, 0])
+    stop1.setEnvSus([0.446, 0.523, 0.404, 0.05, 0.05, 0.542, 0, 0])
+    stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0, 0])
     stop1.setNoiseAtt(0.081)
     stop1.setNoiseDec(0.146)
     stop1.setNoiseSus(0.7)
     stop1.setNoiseRel(0.1)
-    stop1.setNoiseMul(0.469)
-
-def dynEnvTest():
-    print('Enveloppe dynamique')
-    stop1.setMul([0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5])
-    stop1.setEnvAtt([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
-    stop1.setEnvDec([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
-    stop1.setEnvSus([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
-    stop1.setEnvRel([0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2])
-    stop1.setNoiseAtt(0.05)
-    stop1.setNoiseDec(0.05)
-    stop1.setNoiseSus(0.05)
-    stop1.setNoiseRel(0.05)
-    stop1.setNoiseMul(0)
-    stop1.setTMul(1)
-
-#dynEnvTest()
+    stop1.setNoiseMul(3)
+    stop1.setNoiseFiltQ(3)
+    stop1.setSumMul(0)
 
 i = Sig(0)
 vol = Sig(1)
 
 call1 = None
 call2 = None
-
 
 def stateChanges(address, *args):
     global i, vol, stopV, call1, call2
@@ -418,13 +396,6 @@ def stateChanges(address, *args):
         print('Enveloppe dynamique')
         glissUpP.stop()
         transReset()
-        #stop1.setMul([0.588, 0.062, 0.412, 0.61, 0.092, 0.092, 0.6, 0])
-        #principal()
-        #stop1.setEnvAtt([0.181, 0.169, 0.073, 0.073, 0.088, 0.088, 0.1, 0.2])
-        #stop1.setEnvDec([0.02, 0.04, 0.01, 0.008, 0.008, 0.008, 0.008, 0.008])
-        #stop1.setEnvSus([0.6, 0.5, 0.7, 0.2, 0.5, 0.09, 0.05, 0.5])
-        #stop1.setEnvRel([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1])
-        #stop1.setNoiseAtt(0.2)
         dynEnv()
     #3 Élégie
     elif i.value == 4:
@@ -541,17 +512,14 @@ def mStateChanges(ctl, chan):
         #3 Élégie
         elif ctl == 3 and m3Value.get() == 20:
             print('Interpolation de cloche')
-            setInterpol(0)
-            stop1.setTMul(1)
             glissUpP.stop()
-            voixHumaine()
             transReset()
             stop1.setRatio(0)
             stop1.setIndex(1)
             stopInterP.stop()
             voixHumaine()
-            setInterpol(60)
-            stop1.setRamp(60)
+            setInterpol(120)
+            stop1.setRamp(120)
             call2 = CallAfter(bell, time=5)
         #4e Élégie
         elif ctl == 4 and m4Value.get() == 20:
