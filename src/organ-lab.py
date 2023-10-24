@@ -3,6 +3,8 @@ from midi_sustain import NoteinSustain
 from random import random
 from random import randint
 from get_local_ip import get_local_ip
+import wx
+from ctl_gui import MyFrame
 
 pa_list_devices()
 pm_list_devices()
@@ -634,5 +636,10 @@ path = os.path.join(os.path.expanduser("~"), "Desktop", "noise4-rev.wav")
 
 s.recordOptions(filename=path, fileformat=0, sampletype=1)
 
-s.gui(locals())
+#s.gui(locals())
+
+app = wx.App()
+frame = MyFrame(None, -1, "MIDI Control Buttons", s)
+frame.Show()
+app.MainLoop()
 
