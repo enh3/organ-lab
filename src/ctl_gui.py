@@ -18,7 +18,7 @@ class MyFrame(wx.Frame):
         vmainsizer = wx.BoxSizer(wx.HORIZONTAL)
         leftsizer = wx.BoxSizer(wx.HORIZONTAL)
         rightsizer = wx.BoxSizer(wx.HORIZONTAL)
-        self.count = 0
+        self.count = -1
 
         ### PyoGuiControlSlider - dB scale & VuMeter ###
         sizer1 = self.createOutputBox()
@@ -118,12 +118,12 @@ class MyFrame(wx.Frame):
     def on_increase(self, evt):
         self.count += 1
         print(self.count)
-        self.server.ctlout(ctlnum=self.count, value=20, channel=0)
+        self.server.addMidiEvent(status=181, data1=self.count, data2=20)
         #midiNav(self.count, 6)
 
     def on_decrease(self, evt):
         self.count -= 1
         print(self.count)
-        self.server.ctlout(ctlnum=self.count, value=20, channel=0)
+        self.server.addMidiEvent(status=181, data1=self.count, data2=20)
         #midiNav(self.count, 6)
 

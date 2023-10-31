@@ -4,14 +4,17 @@ pa_list_devices()
 pm_list_devices()
 s = Server()
 s.setOutputDevice(1)
-s.setMidiOutputDevice(98)
-s.setMidiInputDevice(99)
+s.setMidiInputDevice(2)
+s.setMidiOutputDevice(4)
 s.boot()
 
 from src.stop import Stop
 from src.midi_sustain import NoteinSustain
 from src.get_local_ip import get_local_ip
 from src.ctl_gui import MyFrame
+from src import midi_nav
+from src.midi_nav import midiNav
+from src.osc_nav import oscNav
 from random import random
 from random import randint
 import wx
@@ -38,14 +41,11 @@ def automEnv(x):
     autEnv.play()
     stop1.setEnvAtt(autEnv)
 
+mScan = CtlScan2(midiNav, toprint=False)
 
 s.amp = 0.05
 
 s.start()
-
-path = os.path.join(os.path.expanduser("~"), "Desktop", "noise4-rev.wav")
-
-s.recordOptions(filename=path, fileformat=0, sampletype=1)
 
 #s.gui(locals())
 

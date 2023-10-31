@@ -1,3 +1,6 @@
+from pyo import *
+from src.get_local_ip import get_local_ip
+
 i = Sig(0)
 vol = Sig(1)
 
@@ -97,7 +100,7 @@ def oscNav(address, *args):
         dissP.play()
 
 #print_i = Print(i, interval=2, message="Audio stream value")
-print("IP ADDRESS", ip_addr)
+#print("IP ADDRESS", ip_addr)
 scan = OscDataReceive(port=9003, address="*", function=oscNav)
 
 send = OscSend(
