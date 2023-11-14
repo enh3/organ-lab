@@ -2,3 +2,9 @@
 /renders
 .DS_STORE
 .ctl_gui_copy.py.swp
+.audio_objects.py.swp
+.midi_nav.py.swp
+.mutations.py.swp
+.pyo_server.py.swp
+.stop.py.swp
+.gitignore.swp

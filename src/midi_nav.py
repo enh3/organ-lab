@@ -1,4 +1,9 @@
 from pyo import *
+from src.pyo_server import s
+from .emulations import *
+from .mutations import *
+from .patterns import *
+from .audio_objects import stop1
 
 m1Value = Midictl(ctlnumber=1, minscale=0, maxscale=127, channel=6)
 m2Value = Midictl(ctlnumber=2, minscale=0, maxscale=127, channel=6)
@@ -14,11 +19,11 @@ m10Value = Midictl(ctlnumber=10, minscale=0, maxscale=127, channel=6)
 val = 0
 
 def midiNav(ctl, chan):
-    global i, stopV, call1, call2
+    global i, stopV, call1, call2, mScan, s
     if chan == 6:
         #1e Élégie
         if ctl == 1 and m1Value.get() == 20: 
-            print('1e Élégie - Qui, si je criais, qui donc entendrait mon cri \nGlissandi')
+            print('1e Élégie - Qui, si je criais, qui donc entendrait mon cri \nGlissandi (midi)')
             glissUpP.play()
         #2e Élégie
         elif ctl == 2 and m2Value.get() == 20:
@@ -85,3 +90,5 @@ def midiNav(ctl, chan):
             randMulP.stop()
             bourdon()
             dissP.play()
+
+mScan = CtlScan2(midiNav, toprint=False)

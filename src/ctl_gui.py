@@ -1,5 +1,6 @@
 import wx
 from pyo import *
+from src.pyo_server import s
 from . import midi_nav
 from .midi_nav import midiNav
 

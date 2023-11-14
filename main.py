@@ -1,23 +1,14 @@
 from pyo import *
+from src.pyo_server import s
 
 pa_list_devices()
 pm_list_devices()
-s = Server()
-s.setOutputDevice(1)
-s.setMidiInputDevice(2)
-s.setMidiOutputDevice(4)
-s.boot()
+print('Is booted', s.getIsBooted())
 
-from src.stop import Stop
-from src.midi_sustain import NoteinSustain
 from src.get_local_ip import get_local_ip
-from src.ctl_gui import MyFrame
-from src import midi_nav
-from src.midi_nav import midiNav
-from src.osc_nav import oscNav
-from random import random
-from random import randint
-import wx
+from src.stop import Stop
+from src.audio_objects import stop1
+stop1.out()
 
 partList = list(range(1, 8, 1))
 transList = list(range(1, 8, 1))
@@ -27,11 +18,18 @@ openSumR = 0.125
 closedSumR = 0.25
 ip_addr = get_local_ip()
 
-#self, tMul, sMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans
-
-stop1 = Stop(0.8, 1, 0.0001, 0.07, partList, 1, [1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0, 0], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], ([0.9]*7), [0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08], 0.001, 0.146, 0.5, 0.1, 3, 0, 0, 0.02, 0, 0.0, 1.5, 0, openSumR, openSumT).out()
+from src.midi_sustain import NoteinSustain
+from src.ctl_gui import MyFrame
+from src import midi_nav
+from src.midi_nav import midiNav
+from src.osc_nav import oscNav
+from src.mutations import *
+from random import random
+from random import randint
+import wx
 
 listTest = list(range(1, 20, 1))
+print(stop1)
 
 autEnv = []
 def automEnv(x):
@@ -41,11 +39,7 @@ def automEnv(x):
     autEnv.play()
     stop1.setEnvAtt(autEnv)
 
-mScan = CtlScan2(midiNav, toprint=False)
-
 s.amp = 0.05
-
-s.start()
 
 #s.gui(locals())
 

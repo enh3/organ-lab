@@ -1,13 +1,14 @@
+from pyo import *
+from .audio_objects import stop1
+
 def randPart():
     x = list(range(1, 21, 1))
     for i in range(len(partList)-1):
         x[i+1] = partList[i+1] + (((random())*2)-1)*1 
     stop1.setPart(x)
-    print(randPart)
 
 def randMul():
     stop1.setMul([random(), random()*0.5, random()*0.3, random()*0.2, random()*0.1, random()*0.05, random()*0.03, random()*0.01, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005])
-    print(randMul)
     
 def setRamp(x):
     stop1.setRamp(x)
