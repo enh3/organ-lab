@@ -24,6 +24,7 @@ from src import midi_nav
 from src.midi_nav import midiNav
 from src.osc_nav import oscNav
 from src.mutations import *
+from src.patterns import *
 from random import random
 from random import randint
 import wx
@@ -39,7 +40,9 @@ def automEnv(x):
     autEnv.play()
     stop1.setEnvAtt(autEnv)
 
-s.amp = 0.05
+#glissContP.play()
+
+s.amp = 0.03
 
 #s.gui(locals())
 

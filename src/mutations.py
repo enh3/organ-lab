@@ -46,20 +46,20 @@ def glissUp3():
     
 def glissCont():
     global glissC
-    for i in range(len(glissC)):
-        glissC[i] == 0
+    #for i in range(len(glissC)):
+    #    glissC[i] == 0
     if glissC[0] < 600:
         stop1.setTrans(glissC)
         for i in range(len(glissC)):
             if i % 2 == 0:
                 glissC[i] = glissC[i] + 0.4
             else:
-                glissC[i] = glissC[i] + -0.4
+                glissC[i] = glissC[i] - 0.4
     else:
         for i in range(len(glissC)):
             glissC[i] = 0
-    print("0", glissC[0])
-    print("1", glissC[1])
+    #print("0", glissC[0])
+    #print("1", glissC[1])
             
 def transReset():
     global glissC
@@ -90,10 +90,12 @@ bellCall4 = None
 
 def bell():
     global bellCall1, bellCall2, bellCall3, bellCall4 
-    bellCall1 = CallAfter(stop1.setEnvAtt, time=120, arg=(.001, .001, .001, .001, 0.001, 0.001, 0.0001, 0.0006, 0.0007, 0.0005, 0.0006, 0.0003, 0.0005, 0.0003, 0.0006, 0.0005, 0.0004, 0.0002, 0.0001, 0.0001)).play()
-    bellCall2 = CallAfter(stop1.setEnvDec, time=120, arg=(1.3, .05, .02, 0, 0, 0.04, .004, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04)).play()
-    bellCall3 = CallAfter(stop1.setEnvSus, time=120, arg=(.4, .1, .02, .01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .002, 0.002)).play()
-    bellCall4 = CallAfter(stop1.setEnvRel, time=120, arg=(2, 0.1, 0.1, .01, .03, 0.4, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.4, .04, 0.04, .04, 0.4)).play()
+    bellCall1 = CallAfter(stop1.setEnvAtt, time=180, arg=(.001, .001, .001, .001, 0.001, 0.001, 0.0001, 0.0006, 0.0007, 0.0005, 0.0006, 0.0003, 0.0005, 0.0003, 0.0006, 0.0005, 0.0004, 0.0002, 0.0001, 0.0001)).play()
+    bellCall2 = CallAfter(stop1.setEnvDec, time=180, arg=(1.3, .05, .02, 0, 0, 0.04, .004, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04)).play()
+    bellCall3 = CallAfter(stop1.setEnvSus, time=180, arg=(.4, .1, .02, .01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .002, 0.002)).play()
+    bellCall4 = CallAfter(stop1.setEnvRel, time=180, arg=(2, 0.1, 0.1, .01, .03, 0.4, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.4, .04, 0.04, .04, 0.4)).play()
+    setInterpol(240)
+    stop1.setRamp(240)
     stop1.setMul([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
     stop1.setRatio(0.43982735)
     stop1.setIndex(4)

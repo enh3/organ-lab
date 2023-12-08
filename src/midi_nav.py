@@ -34,14 +34,16 @@ def midiNav(ctl, chan):
         #3 Élégie
         elif ctl == 3 and m3Value.get() == 20:
             print('3e Élégie - Interpolation de cloche')
+            voixHumaine()
             glissUpP.stop()
             transReset()
+            setInterpol(0.05)
+            stop1.setRamp(0.05)
             stop1.setRatio(0)
             stop1.setIndex(1)
             stopInterP.stop()
-            voixHumaine()
-            setInterpol(120)
-            stop1.setRamp(120)
+            setInterpol(900000)
+            stop1.setRamp(900000)
             call2 = CallAfter(bell, time=5)
         #4e Élégie
         elif ctl == 4 and m4Value.get() == 20:

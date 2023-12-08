@@ -7,7 +7,7 @@ class Stop:
     def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans):
         # scale=1 to get pitch values in hertz
         #self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=6)
-        self.note = Notein(poly=10, scale=1, first=0, last=127, channel=0)
+        self.note = Notein(poly=10, scale=1, first=0, last=127, channel=6)
         self.note.keyboard()
         self.partScRat = Sig(partScRat)
         self.ramp = Sig(ramp)
@@ -64,7 +64,7 @@ class Stop:
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=mMul)
         self.filt = ButLP(self.mix + self.nMix + self.sum + self.windF, 5000)
-        self.rev = STRev(self.filt, inpos=0.5, revtime=5, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
+        self.rev = STRev(self.filt, inpos=0.5, revtime=10, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
         self.sp = Spectrum(self.rev.mix(1), size=8192)
         #self.pp = Print(self.amps, interval=2, message="Audio stream value")
         

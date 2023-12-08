@@ -13,7 +13,5 @@ glissUpP3 = Pattern(function=glissUp3, time=1)
 dissP = Pattern(function=dissocie, time=0.5)
 babP = Pattern(function=bourdonAndBell, time=0.2, arg=0.2)
 tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
-glissContP = Pattern(function=glissCont, time=0.1)
+glissContP = Pattern(function=glissCont, time=0.001)
 stopInterP = Pattern(function=stopInter, time=Sig(stopInterPRand))
-
-glissUpP.play()

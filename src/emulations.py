@@ -1,3 +1,6 @@
+from pyo import *
+from .audio_objects import stop1
+
 def bourdon():
     stop1.setMul([1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0])
     stop1.setEnvAtt([0.2, 0.3, 0.1, 0.2, 0.1, 0.07, 0.08, 0.6, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
