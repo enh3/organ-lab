@@ -4,7 +4,7 @@ from src.midi_sustain import NoteinSustain
 print('Is started', s.getIsStarted())
 
 class Stop:
-    def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumRat, sumTrans):
+    def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumTrans, sumRat, sumInd):
         # scale=1 to get pitch values in hertz
         #self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=6)
         self.note = Notein(poly=10, scale=1, first=0, last=127, channel=6)
@@ -21,6 +21,7 @@ class Stop:
         self.noiseMul = SigTo(noiseMul, self.inter)
         self.noiseFiltQ = SigTo(noiseFiltQ, self.inter)
         self.sumRat = SigTo(sumRat, self.inter)
+        self.sumInd = Sig(sumInd)
         self.sumTrans = SigTo(sumTrans, self.inter)
         self.sumMul = SigTo(sumMul, self.inter)
         self.trans = SigTo(trans, self.inter)
@@ -49,7 +50,7 @@ class Stop:
         self.fmod = self.note['pitch'] * self.ratio
         self.amod = self.fmod * self.index
         self.mod = Sine(self.fmod, mul=self.amod)
-        self.sum = SumOsc(freq=(MToF(FToM(self.note['pitch'])-0.15+self.sumTrans) + self.trans), ratio=self.sumRat, index=0.3, mul=self.noiseEnv*self.sumMul)
+        self.sum = SumOsc(freq=(MToF(FToM(self.note['pitch'])-0.15+self.sumTrans) + self.trans), ratio=self.sumRat, index=self.sumInd, mul=self.noiseEnv*self.sumMul)
         # Handles the user polyphony independently to avoid mixed polyphony concerns (self.note already contains 10 streams)
         for i in range(len(part)):
             # SigTo to avoid clicks
@@ -78,6 +79,12 @@ class Stop:
     def setSumMul(self, x):
         self.sumMul.value = x
         
+    def setSumRat(self, x):
+        self.sumRat.value = x
+
+    def setSumInd(self, x):
+        self.sumInd.value = x
+
     def setInter(self, x):
         self.inter.value = x
         

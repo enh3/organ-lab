@@ -41,8 +41,9 @@ def automEnv(x):
     stop1.setEnvAtt(autEnv)
 
 #glissContP.play()
+voixHumaine()
 
-s.amp = 0.03
+s.amp = 0.27
 
 #s.gui(locals())
 
