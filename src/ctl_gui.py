@@ -47,7 +47,7 @@ class MyFrame(wx.Frame):
             parent=self.panel,  # Use 'self.panel' as the parent for the slider
             minvalue=-60,
             maxvalue=18,
-            init=-25,
+            init=-20,
             pos=(0, 0),
             size=(200, 16),
             log=False,
@@ -119,12 +119,12 @@ class MyFrame(wx.Frame):
     def on_increase(self, evt):
         self.count += 1
         print(self.count)
-        self.server.addMidiEvent(status=181, data1=self.count, data2=20)
-        #midiNav(self.count, 6)
+        #self.server.addMidiEvent(status=176, data1=self.count, data2=20)
+        midiNav(176, self.count, 20)
 
     def on_decrease(self, evt):
         self.count -= 1
         print(self.count)
-        self.server.addMidiEvent(status=181, data1=self.count, data2=20)
-        #midiNav(self.count, 6)
+        #self.server.addMidiEvent(status=176, data1=self.count, data2=20)
+        midiNav(176, self.count, 20)
 

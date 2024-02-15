@@ -1,5 +1,7 @@
 from pyo import *
 from .audio_objects import stop1
+from random import *
+from .emulations import * 
 
 def randPart():
     x = list(range(1, 21, 1))
@@ -138,6 +140,7 @@ def stopInter():
     global stopInterPRand
     x = randint(0, 3)
     stopInterPRand.value = randint(1, 10)
+    stop1.setRamp(stopInterPRand)
     print(x)
     if x == 0:
         bourdon()
