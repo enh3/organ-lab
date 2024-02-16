@@ -24,7 +24,7 @@ git clone https://github.com/enh3/organ-lab.git
 pip install pyo
 
 ### Usage
-- **Editing Source Files:** Currently, OrganLab is operated by directly editing the source files. See `emulations.py`, `mutations.py`, and `patterns.py` for composition and synthesis manipulation.
+- **Editing Source Files:** Currently, OrganLab is operated by directly editing the source files. See `emulations.py`, `mutations.py`, and `patterns.py` for synthesis manipulation, and `midi_nav.py`/`osc_nav.py` for creating a state tree for automating changes in the synthesis server.
 - **GUI Operation:** Access the GUI for basic interactions such as adjusting the volume, stepping through the state tree and testing through an on screen keyboard. 
 - **Control via MIDI or OSC:** For detailed instructions on controlling OrganLab using MIDI or OSC commands, please refer to the MIDI/OSC Control section below.
 
