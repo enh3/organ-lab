@@ -1,7 +1,7 @@
 # OrganLab
 
 ## Overview
-OrganLab is a real-time synthesis program built with the pyo library by Olivier Bélanger. Inspired by the pipe organ, OrganLab allows you to define various "stops" with varied timbral profiles using additive and subtractive synthesis. These stops can then be transformed in different ways, such as imploding or exploding the spectrum, applying frequency modulation, or treating the harmonic and transient content independently. This project is part of my master's research-creation project at the Université de Montréal, and represents a work in progress. Contributions are welcome!
+OrganLab is a real-time synthesis program built with the pyo library. Inspired by the pipe organ, OrganLab allows you to define various "stops" with varied timbral profiles using additive and subtractive synthesis. These stops can then be transformed in different ways, such as imploding or exploding the spectrum, applying frequency modulation, or treating the harmonic and transient content independently. This project is part of my master's research-creation project at the Université de Montréal, and represents a work in progress. Contributions are welcome.
 
 ## Features
 - **Pipe Organ Synthesis:** Use `emulations.py` to define your palette of stops.
@@ -20,7 +20,7 @@ OrganLab is a real-time synthesis program built with the pyo library by Olivier 
 ### Installation
 Clone the repository and install the required Python packages:
 
-git clone https://github.com/yourusername/OrganLab.git
+git clone https://github.com/enh3/organ-lab.git
 pip install pyo
 
 ### Usage
@@ -45,7 +45,7 @@ A custom `.xml` file is available for integrating OrganLab with organ emulators 
 - **Enhanced GUI:** Develop a more comprehensive GUI to support the graphically inclined.
 
 ## Contributing
-Though this program has been so far mainly based around my own creative project, I'd like it to eventually be useful for other people as well. If you'd like to contribute, throw me an email at net@kjel.ca and I'd be happy to help you sift through the codebase. 
+Though this program has been so far based around my own creative project, I'd like it to eventually be useful for other people as well. If you'd like to contribute, throw me an email at net@kjel.ca and I'd be happy to help you sift through the codebase. 
 
 ## License
 This project is licensed under LGPL 3.0 - see the LICENSE file for details.
