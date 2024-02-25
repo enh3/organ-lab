@@ -1,8 +1,8 @@
 import wx
 from pyo import *
 from src.pyo_server import s
-from . import midi_nav
-from .midi_nav import midiNav
+#from . import nav
+#from .nav import stateNav
 
 NCHNLS = 2
 
@@ -84,34 +84,16 @@ class MyFrame(wx.Frame):
         
         buttons_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        # If the count is 0 (downbeat), play a louder and longer event; otherwise, play a softer and shorter one.
-        if self.count == 0:
-            vel = random.randint(90, 110)
-            dur = 500
-        else:
-            vel = random.randint(50, 70)
-            dur = 125
-
         increase_button = wx.Button(self.panel, label="Continue", pos=(10, 10))
         increase_button.Bind(wx.EVT_BUTTON, self.on_increase)
 
         decrease_button = wx.Button(self.panel, label="Return", pos=(10, 10))
         decrease_button.Bind(wx.EVT_BUTTON, self.on_decrease)
 
-        # Increase and wrap the count to generate a 4-beat sequence.
-        self.count = (self.count + 1) % 4
-
-        # The Server's `makenote` method generates a note-on event immediately
-        # and the corresponding note-off event after `duration` milliseconds.
-        self.server.makenote(pitch=10, velocity=vel, duration=dur)
-
         buttons_sizer.Add(decrease_button, 0, wx.ALL | wx.EXPAND, 5)
         buttons_sizer.Add(increase_button, 0, wx.ALL | wx.EXPAND, 5)
         sizer.Add(buttons_sizer, 0, wx.CENTER | wx.ALL, 5)
         return sizer
-
-    def changeFreq(self, evt):
-        fr.value = evt.value
 
     def changeGain(self, evt):
         self.server.amp = pow(10, evt.value * 0.05)
@@ -120,11 +102,11 @@ class MyFrame(wx.Frame):
         self.count += 1
         print(self.count)
         #self.server.addMidiEvent(status=176, data1=self.count, data2=20)
-        midiNav(176, self.count, 20)
+        stateNav(176, self.count, 20, "midi")
 
     def on_decrease(self, evt):
         self.count -= 1
         print(self.count)
         #self.server.addMidiEvent(status=176, data1=self.count, data2=20)
-        midiNav(176, self.count, 20)
+        stateNav(176, self.count, 20, "midi")
 

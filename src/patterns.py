@@ -4,6 +4,7 @@ from .stop import *
 from .mutations import *
 from .emulations import *
 from .audio_objects import stop1
+#from random import random
 
 trigDiss = Thresh(stop1.vel(), threshold=100, dir=0)
 randPartP = Pattern(function=randPart, time=30)
@@ -15,3 +16,6 @@ babP = Pattern(function=bourdonAndBell, time=0.2, arg=0.2)
 tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
 glissContP = Pattern(function=glissCont, time=0.001)
 stopInterP = Pattern(function=stopInter, time=Sig(stopInterPRand))
+
+def stopInterPD(): 
+    stopInterP.play()

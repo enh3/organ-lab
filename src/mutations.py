@@ -1,7 +1,10 @@
 from pyo import *
 from .audio_objects import stop1
-from random import *
+#from random import randint
 from .emulations import * 
+from random import random
+
+print(random())
 
 def randPart():
     x = list(range(1, 21, 1))
@@ -10,7 +13,7 @@ def randPart():
     stop1.setPart(x)
 
 def randMul():
-    stop1.setMul([random(), random()*0.5, random()*0.3, random()*0.2, random()*0.1, random()*0.05, random()*0.03, random()*0.01, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005, random()*0.005])
+    stop1.setMul([random(), random()*0.5, random()*0.3, random()*0.2, random()*0.1, random()*0.05, random()*0.03, random()*0.01])
     
 def setRamp(x):
     stop1.setRamp(x)

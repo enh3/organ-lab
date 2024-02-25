@@ -18,19 +18,17 @@ openSumR = 0.125
 closedSumR = 0.25
 ip_addr = get_local_ip()
 
+#from random import random
+#from random import randint
 from src.midi_sustain import NoteinSustain
 from src.ctl_gui import MyFrame
-from src import midi_nav
-from src.midi_nav import midiNav
-from src.osc_nav import oscNav
+from src import nav
+from src.nav import stateNav
 from src.mutations import *
 from src.patterns import *
-from random import random
-from random import randint
 import wx
 
-listTest = list(range(1, 20, 1))
-print(stop1)
+#print(random())
 
 autEnv = []
 def automEnv(x):
@@ -40,8 +38,8 @@ def automEnv(x):
     autEnv.play()
     stop1.setEnvAtt(autEnv)
 
-#glissContP.play()
-voixHumaine()
+#randMulP.play()
+#stop1.setMul([.1, .1, .1, .1, .1, .1, .1, .1])
 
 s.amp = 0.27
 
