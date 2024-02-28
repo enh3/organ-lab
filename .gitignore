@@ -9,6 +9,7 @@
 .stop.py.swp
 .gitignore.swp
 .main.py.swp
+.nav.py.swp
 .ctl_gui.py.swp
 main.log
 __pycache__

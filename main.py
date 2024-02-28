@@ -40,6 +40,14 @@ def automEnv(x):
 
 #randMulP.play()
 #stop1.setMul([.1, .1, .1, .1, .1, .1, .1, .1])
+i = Sig(0)
+vol = Sig(0)
+send = OscSend(
+    input=[i, vol],
+    port=8996,
+    address=["counter", "volume"],
+    host="192.168.100.143",
+)
 
 s.amp = 0.27
 

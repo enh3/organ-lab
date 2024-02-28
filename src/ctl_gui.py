@@ -16,17 +16,22 @@ class MyFrame(wx.Frame):
         self.server = server  # Pass the Pyo server instance from organ-lab.py
 
         self.panel = wx.Panel(self)
-        vmainsizer = wx.BoxSizer(wx.HORIZONTAL)
-        leftsizer = wx.BoxSizer(wx.HORIZONTAL)
-        rightsizer = wx.BoxSizer(wx.HORIZONTAL)
+        vmainsizer = wx.BoxSizer(wx.VERTICAL)
+        mainsizer = wx.BoxSizer(wx.HORIZONTAL)
+        leftsizer = wx.BoxSizer(wx.VERTICAL)
+        rightsizer = wx.BoxSizer(wx.VERTICAL)
         self.count = -1
 
         ### PyoGuiControlSlider - dB scale & VuMeter ###
         sizer1 = self.createOutputBox()
         sizer2 = self.createMidiButtons(self.count)
 
+        keyboard = PyoGuiKeyboard(self.panel)
+        keyboard.Bind(EVT_PYO_GUI_KEYBOARD, self.onMidiNote)
+
         vmainsizer.Add(sizer1, 0, wx.LEFT | wx.ALL, 5)
-        vmainsizer.Add(sizer2, 0, wx.LEFT | wx.ALL, 5)
+        vmainsizer.Add(sizer2, 1, wx.LEFT | wx.ALL, 5)
+        vmainsizer.Add(keyboard, 2, wx.LEFT | wx.ALL, 5)
         
         self.panel.SetSizerAndFit(vmainsizer)
 
@@ -34,6 +39,11 @@ class MyFrame(wx.Frame):
         self.server.stop()
         time.sleep(0.25)
         self.Destroy()
+
+    def onMidiNote(self, evt):
+        self.server.addMidiEvent(status=144, data1=evt.value[0], data2=evt.value[1])
+        print("Pitch:    %d" % evt.value[0])
+        print("Velocity: %d" % evt.value[1])
 
     def createOutputBox(self):
         sizer = wx.BoxSizer(wx.VERTICAL)
