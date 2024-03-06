@@ -3,8 +3,11 @@ from src.pyo_server import s
 from src.midi_sustain import NoteinSustain
 print('Is started', s.getIsStarted())
 
+sp = Spectrum(Sig(0.2))
+
 class Stop:
     def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumTrans, sumRat, sumInd):
+        global sp
         # scale=1 to get pitch values in hertz
         self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=1)
         #self.note = Notein(poly=10, scale=1, first=0, last=127, channel=6)
@@ -66,7 +69,7 @@ class Stop:
         self.mix = Mix(self.mixed, 2, mul=mMul)
         self.filt = ButLP(self.mix + self.nMix + self.sum + self.windF, 5000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=10, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
-        self.sp = Spectrum(self.rev.mix(1), size=8192)
+        sp = Spectrum(self.rev.mix(1), size=8192)
         #self.pp = Print(self.amps, interval=2, message="Audio stream value")
         
     def out(self):

@@ -26,9 +26,8 @@ from src import nav
 from src.nav import stateNav
 from src.mutations import *
 from src.patterns import *
+from src.stop import *
 import wx
-
-#print(random())
 
 autEnv = []
 def automEnv(x):
@@ -38,23 +37,15 @@ def automEnv(x):
     autEnv.play()
     stop1.setEnvAtt(autEnv)
 
-#randMulP.play()
-#stop1.setMul([.1, .1, .1, .1, .1, .1, .1, .1])
 i = Sig(0)
 vol = Sig(0)
-send = OscSend(
-    input=[i, vol],
-    port=8996,
-    address=["counter", "volume"],
-    host="192.168.100.143",
-)
 
 s.amp = 0.27
 
 #s.gui(locals())
 
 app = wx.App()
-frame = MyFrame(None, -1, "MIDI Control Buttons", s)
+frame = MyFrame(None, -1, "MIDI Control Buttons", s, sp)
 frame.Show()
 app.MainLoop()
 

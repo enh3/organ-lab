@@ -9,7 +9,6 @@ i = Sig(0)
 vol = Sig(0)
 def stateNav(source, *args):
     global i, vol  # Global index for states
-    print(i)
     state_changed = False  # Flag to track whether a state change should be triggered
 
     # Determine the state index based on the source
@@ -54,7 +53,7 @@ def stateNav(source, *args):
         # OSC directly modifies 'i', or you could map addresses to indexes as well
         if address == "/volume":
             vol.value = value
-            stop1.setTMul(vol.value)
+            stop1.setTMul(abs(vol.value-1))
         if address == "/continue" and value == 1:
             i.value += 1 # Assuming 10 states, prevent overflow
             state_changed = True
@@ -146,8 +145,8 @@ oscScan = OscDataReceive(port=9003, address="*", function=osc_nav)
 
 send = OscSend(
     input=[i, vol],
-    port=8996,
+    port=8997,
     address=["counter", "volume"],
-    host="192.168.78.1",
+    host="127.0.0.1",
 )
 

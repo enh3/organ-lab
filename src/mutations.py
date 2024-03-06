@@ -1,6 +1,6 @@
 from pyo import *
 from .audio_objects import stop1
-#from random import randint
+from random import randint
 from .emulations import * 
 from random import random
 
