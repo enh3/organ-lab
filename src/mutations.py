@@ -63,8 +63,8 @@ def glissCont():
     else:
         for i in range(len(glissC)):
             glissC[i] = 0
-    #print("0", glissC[0])
-    #print("1", glissC[1])
+    print("0", glissC[0])
+    print("1", glissC[1])
             
 def transReset():
     global glissC
@@ -87,33 +87,35 @@ def dissocie(x):
             print("setnon0")
     if dissCount == 4:
         dissCount = 0
-        
-bellCall1 = None
-bellCall2 = None
-bellCall3 = None
-bellCall4 = None
 
-def bell():
-    global bellCall1, bellCall2, bellCall3, bellCall4 
-    bellCall1 = CallAfter(stop1.setEnvAtt, time=180, arg=(.001, .001, .001, .001, 0.001, 0.001, 0.0001, 0.0006, 0.0007, 0.0005, 0.0006, 0.0003, 0.0005, 0.0003, 0.0006, 0.0005, 0.0004, 0.0002, 0.0001, 0.0001)).play()
-    bellCall2 = CallAfter(stop1.setEnvDec, time=180, arg=(1.3, .05, .02, 0, 0, 0.04, .004, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04)).play()
-    bellCall3 = CallAfter(stop1.setEnvSus, time=180, arg=(.4, .1, .02, .01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .002, 0.002)).play()
-    bellCall4 = CallAfter(stop1.setEnvRel, time=180, arg=(2, 0.1, 0.1, .01, .03, 0.4, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.4, .04, 0.04, .04, 0.4)).play()
-    setInterpol(240)
-    stop1.setRamp(240)
+def bellMul():
+    stop1.setRamp(120)
     stop1.setMul([1, 0.01, 0.1, 0.01, 0.07, 0, 0.02, 0, 0.01, 0, 0.003, 0, 0.003, 0, 0.001, 0, 0.001, 0, 0.001, 0])
-    stop1.setRatio(0.43982735)
-    stop1.setIndex(4)
+    print('bellMul')
+    
+def bellFM(): 
+    x = Linseg([(0,0),(30,0.013864),(60,0.080007),(120,0.43982735)])
+    y = Linseg([(0,1.5),(30,1.589806),(60,2.026163),(120,4)])
+    x.play(delay=0)
+    y.play(delay=0)
+    stop1.setRatio(x)
+    stop1.setIndex(y)
+    print('bellFM')
+
+def bellEnv():
+    stop1.setEnvAtt([.001, .001, .001, .001, 0.001, 0.001, 0.0001, 0.0006, 0.0007, 0.0005, 0.0006, 0.0003, 0.0005, 0.0003, 0.0006, 0.0005, 0.0004, 0.0002, 0.0001, 0.0001])
+    stop1.setEnvDec([1.3, .05, .02, 0, 0, 0.04, .004, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04])
+    stop1.setEnvSus([.4, .1, .02, .01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .01, 0.01, .002, 0.002])
+    stop1.setEnvRel([2, 0.1, 0.1, .01, .03, 0.4, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.04, .04, 0.4, .04, 0.04, .04, 0.4])
     stop1.setNoiseAtt(0.001)
     stop1.setNoiseDec(0.1)
     stop1.setNoiseSus(0.01)
     stop1.setNoiseRel(0.1)    
     stop1.setNoiseMul(0.9)
     stop1.setNoiseFiltQ(4)
-    #stop1.setPartSc(1.05)
     stop1.setPartScRat(1.02)
-    print(bell)
-    
+    print('bellEnv')
+        
 babCount = 0
 def bourdonAndBell(x):
     global babCount
@@ -129,14 +131,6 @@ def bourdonAndBell(x):
     
 def setInterpol(x):
     stop1.setInter(x)
-    
-def autom3():
-    x = Linseg([(0,0),(80,0.01)])
-    y = Linseg([(0,0),(80,5)])
-    x.play(delay=0).graph()
-    y.play(delay=0).graph()
-    stop1.setRatio(x)
-    stop1.setIndex(y)
     
 stopInterPRand = Sig(1)
 def stopInter():

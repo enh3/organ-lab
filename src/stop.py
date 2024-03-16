@@ -10,7 +10,7 @@ class Stop:
         global sp
         # scale=1 to get pitch values in hertz
         self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=1)
-        #self.note = Notein(poly=10, scale=1, first=0, last=127, channel=6)
+        #self.note = Notein(poly=10, scale=1, first=0, last=127)
         #self.note.keyboard()
         self.partScRat = Sig(partScRat)
         self.ramp = Sig(ramp)
@@ -70,7 +70,10 @@ class Stop:
         self.filt = ButLP(self.mix + self.nMix + self.sum + self.windF, 5000)
         self.rev = STRev(self.filt, inpos=0.5, revtime=10, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
         sp = Spectrum(self.rev.mix(1), size=8192)
-        #self.pp = Print(self.amps, interval=2, message="Audio stream value")
+        #self.pp2 = Print(self.ratio, interval=2, message="Ratio")
+        #self.pp = Print(self.index, interval=2, message="Index")
+        #self.tfon = TrigFunc(self.note["trigon"], function=self.noteon, arg=list(range(10)))
+        #self.tfoff = TrigFunc(self.note["trigoff"], function=self.noteoff, arg=list(range(10)))
         
     def out(self):
         self.rev.out()
@@ -153,3 +156,15 @@ class Stop:
         
     def setNoiseFiltQ(self, x):
         self.noiseFiltQ.value = x
+
+    def noteon(self, voice):
+        "Print pitch and velocity for noteon event."
+        pit = int(self.note["pitch"].get(all=True)[voice])
+        vel = int(self.note["velocity"].get(all=True)[voice] * 127)
+        print("Noteon: voice = %d, pitch = %d, velocity = %d" % (voice, pit, vel))
+
+    def noteoff(self, voice):
+        "Print pitch and velocity for noteoff event."
+        pit = int(self.note["pitch"].get(all=True)[voice])
+        vel = int(self.note["velocity"].get(all=True)[voice] * 127)
+        print("Noteoff: voice = %d, pitch = %d, velocity = %d" % (voice, pit, vel))

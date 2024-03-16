@@ -1,5 +1,6 @@
 from pyo import *
 from .audio_objects import stop1
+from .stop import *
 
 def bourdon():
     stop1.setMul([1, 0.004, 0.012, 0, 0.0045, 0.0024, 0, 0])
@@ -33,7 +34,7 @@ def voixHumaine():
     stop1.setEnvRel([0.5, 0.3, 0.6, 0.2, 0.1, 0.07, 0.08, 0.08, 0.07, 0.05, 0.06, 0.03, 0.05, 0.03, 0.06, 0.05, 0.04, 0.02, 0.01, 0.01])
     stop1.setSumMul(0.00631)
     stop1.setSumInd(0.8)
-    print(voixHumaine)
+    print("voixHumaine has been played")
     
 def cornet():
     stop1.setMul([0, 0.4, 0.3, 0.6, 0.5, 0.09, 0, 0.09, 0.004, 0.2, 0, 0.1, 0, 0.002, 0.01, 0.08, 0, 0, 0, 0.001])

@@ -1,5 +1,6 @@
 from pyo import *
 from src.pyo_server import s
+from src.patterns import *
 
 pa_list_devices()
 pm_list_devices()
@@ -22,9 +23,9 @@ ip_addr = get_local_ip()
 #from random import randint
 from src.midi_sustain import NoteinSustain
 from src.ctl_gui import MyFrame
+from src.mutations import *
 from src import nav
 from src.nav import stateNav
-from src.mutations import *
 from src.patterns import *
 from src.stop import *
 import wx
@@ -41,6 +42,10 @@ i = Sig(0)
 vol = Sig(0)
 
 s.amp = 0.27
+
+#voixHumaine()
+cornet()
+glissContP.play()
 
 #s.gui(locals())
 

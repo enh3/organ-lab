@@ -5,10 +5,17 @@ from .mutations import *
 from .patterns import *
 from .audio_objects import stop1
 
+call1 = None
+call2 = None
+call3 = None
+call4 = None
+call5 = None
+
 i = Sig(0)
 vol = Sig(0)
+
 def stateNav(source, *args):
-    global i, vol  # Global index for states
+    global i, vol, call1, call2, call3, call4, call5  # Global index for states
     state_changed = False  # Flag to track whether a state change should be triggered
 
     # Determine the state index based on the source
@@ -71,21 +78,21 @@ def stateNav(source, *args):
             print('2e Élégie - Toute Ange est terrible\nEnveloppe dynamique')
             glissUpP.stop()
             transReset()
-            dynEnv()
+            #dynEnv()
+            #voixHumaine()
         #3e Élégie
         elif i.value == 3:
             print('3e Élégie - Interpolation de cloche')
-            voixHumaine()
             glissUpP.stop()
             transReset()
-            setInterpol(0.05)
-            stop1.setRamp(0.05)
+            voixHumaine()
             stop1.setRatio(0)
             stop1.setIndex(1)
             stopInterP.stop()
-            setInterpol(900000)
-            stop1.setRamp(900000)
-            call2 = CallAfter(bell, time=5)
+            call2 = CallAfter(stop1.setRamp, time=2, arg=(240))
+            call3 = CallAfter(bellMul, time=1)
+            call4 = CallAfter(bellFM, time=1)
+            call5 = CallAfter(bellEnv, time=120)
         #4e Élégie
         elif i.value == 4:
             print('4e Élégie - Verres musicaux')
