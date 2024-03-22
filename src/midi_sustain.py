@@ -116,9 +116,9 @@ class NoteinSustain:
             print("NoteinSustain's key should be 'pitch' or 'velocity'!")
 
 
-if __name__ == '__main__':
-    s = Server()
-    print(pm_list_devices())
-    s.setMidiInputDevice(0)
-    s.boot().start()
-    s.gui(locals())
+#if __name__ == '__main__':
+#    s = Server()
+#    print(pm_list_devices())
+#    s.setMidiInputDevice(0)
+#    s.boot().start()
+#    s.gui(locals())

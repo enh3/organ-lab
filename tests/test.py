@@ -1,5 +1,9 @@
+import os
+import sys
 from pyo import *
-from s047_midi_sustain_and_polyphony import NoteinSustain
+# Add the parent directory of mypackage to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from src.midi_sustain import NoteinSustain
 
 s = Server()
 s.setMidiInputDevice(99)
