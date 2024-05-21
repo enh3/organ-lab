@@ -9,7 +9,7 @@ from .audio_objects import stop1
 trigDiss = Thresh(stop1.vel(), threshold=100, dir=0)
 randPartP = Pattern(function=randPart, time=30)
 randMulP = Pattern(function=randMul, time=3)
-glissUpP = Pattern(function=glissUp, time=0.12)
+glissUpP = Pattern(function=glissUp, time=.2)
 glissUpP3 = Pattern(function=glissUp3, time=1)
 dissP = Pattern(function=dissocie, time=0.5)
 babP = Pattern(function=bourdonAndBell, time=0.2, arg=0.2)

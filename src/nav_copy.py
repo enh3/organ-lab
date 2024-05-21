@@ -81,11 +81,8 @@ def stateNav(source, *args):
         elif status == 150 and data1 == 67 or status == 176 and data1 == 20 and data2 ==20:    
             i.value = 20 
             state_changed = True
-        elif status == 150 and data1 == 68 or status == 176 and data1 == 21 and data2 ==20:    
-            i.value = 21 
-            state_changed = True
         elif status == 182 and data1 == 20:
-            vol.value = (data2/127)*1.1 
+            vol.value = data2/127 
             stop1.setTTMul(vol.value) 
 
     elif source == "osc":
@@ -106,13 +103,11 @@ def stateNav(source, *args):
         if i.value == 3:
             print('1e Élégie - Qui, si je criais, qui donc entendrait mon cri \nGlissandi (midi)')
             glissUpP.play()
-            stop1.setTMul(0.85)
         #2e Élégie
         elif i.value == 4:
             print('2e Élégie - Toute Ange est terrible\nEnveloppe dynamique')
             glissUpP.stop()
             transReset()
-            stop1.setTMul(0.55)
             dynEnv()
         #3e Élégie
         elif i.value == 6:
@@ -120,7 +115,7 @@ def stateNav(source, *args):
             glissUpP.stop()
             transReset()
             voixHumaine()
-            stop1.setTMul(1)
+            stop1.setTMul(.9)
             stop1.setRatio(0)
             stop1.setIndex(1)
             stopInterP.stop()
@@ -136,7 +131,7 @@ def stateNav(source, *args):
         #5e Élégie
         elif i.value == 11:
             print('5e Élégie - Mais les errants!')
-            stop1.setTMul(.7)
+            stop1.setTMul(1)
             stop1.setInter(0)
             glissUpP.stop()
             transReset()
@@ -149,7 +144,7 @@ def stateNav(source, *args):
             call3 = CallAfter(stopInterPD, time=5)
         elif i.value == 12:
             print('5e Élégie - Mais les errants!')
-            stop1.setTMul(.7)
+            stop1.setTMul(1)
             glissUpP.stop()
             transReset()
             stop1.setRatio(0)
@@ -164,40 +159,17 @@ def stateNav(source, *args):
         elif i.value == 14:
             print('8e Élégie - Non, plus d\'imploration, voix maintenant mûrie, plus de clameur')
             stop1.setTMul(0)
-        elif i.value == 19:
+        elif i.value == 18:
             print('7e Élégie - Non, plus d\'imploration, voix maintenant mûrie, plus de clameur')
             stop1.setTMul(1)
-            #bourdon()
-            stop1.setNoiseAtt([3, 4, 2, 2.5, 3, .4, .5, .3])
-            stop1.setNoiseDec([3, 4, 2, 0.3, 0.6, .4, .5, .3])
-            stop1.setEnvAtt([6, 4, 2, 2.5, 3, .4, .5, .3])
-            stop1.setEnvDec([6, 4, 2, 0.3, 0.6, .4, .5, .3])
-            stopP = stop1.setPart([1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0])
-            #stop1.noiseMul(4)
-            #stopV = stop1.vel()
+            bourdon()
+            stop1.setEnvAtt([2.285, 2.450, 0.327, 0.338, 0.385, 0.277, 0, 0])
             #setRamp(100)
             #stop1.setInter(100)
-            #call3 = CallAfter(stopInterPD, time=5)
+            call3 = CallAfter(stopInterPD, time=5)
             #setRamp(5)
             #cornet()
-            #randMulP.play()
-        elif i.value == 20:
-            print('7e Élégie - Non, plus d\'imploration, voix maintenant mûrie, plus de clameur')
-            stop1.setTMul(1)
-            #bourdon()
-            stop1.setNoiseAtt([3, 4, 2, 2.5, 3, .4, .5, .3])
-            stop1.setNoiseDec([3, 4, 2, 0.3, 0.6, .4, .5, .3])
-            stop1.setEnvAtt([6, 4, 2, 2.5, 3, .4, .5, .3])
-            stop1.setEnvDec([6, 4, 2, 0.3, 0.6, .4, .5, .3])
-            stopP = stop1.setPart([1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0])
-            #stop1.noiseMul(4)
-            #stopV = stop1.vel()
-            #setRamp(100)
-            #stop1.setInter(100)
-            #call3 = CallAfter(stopInterPD, time=5)
-            #setRamp(5)
-            #cornet()
-            #randMulP.play()
+            randMulP.play()
 
 # Wrapper or partial functions to specify the source type
 from functools import partial

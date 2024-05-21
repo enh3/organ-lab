@@ -3,10 +3,10 @@ from src.pyo_server import s
 from src.midi_sustain import NoteinSustain
 print('Is started', s.getIsStarted())
 
-sp = Spectrum(Sig(0.2))
+#sp = Spectrum(Sig(0.2))
 
 class Stop:
-    def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumTrans, sumRat, sumInd):
+    def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumTrans, sumRat, sumInd, tTMul):
         global sp
         # scale=1 to get pitch values in hertz
         self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=1)
@@ -29,6 +29,7 @@ class Stop:
         self.sumMul = SigTo(sumMul, self.inter)
         self.trans = SigTo(trans, self.inter)
         self.tMul = SigTo(tMul, self.inter)
+        self.tTMul = Sig(tTMul)
         self.amps = []
         self.att = []
         self.dec = []
@@ -64,14 +65,15 @@ class Stop:
             self.rel.append(SigTo(rel[i], time=self.inter))
             self.envs.append(MidiAdsr(self.note['velocity'], attack=att[i], decay=dec[i], sustain=sus[i], release=rel[i], mul=self.amps[-1]))
             self.part.append(SigTo(part[i], time=0.2))
-            self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch']-0.15))) + Randi(-rand, rand, 5) + self.trans + self.mod, mul=self.envs[-1]))
+            self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch'])-.15)) + Randi(-rand, rand, 5) + self.trans + self.mod, mul=self.envs[-1]))
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=mMul)
         self.filt = ButLP(self.mix + self.nMix + self.sum + self.windF, 5000)
-        self.rev = STRev(self.filt, inpos=0.5, revtime=10, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
-        sp = Spectrum(self.rev.mix(1), size=8192)
+        self.comp = Compress(self.filt, thresh=-15, ratio=6, mul=self.tMul*self.tTMul)
+        self.rev = STRev(self.comp, inpos=0.5, revtime=10, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
+        #sp = Spectrum(self.rev.mix(1), size=8192)
         #self.pp2 = Print(self.ratio, interval=2, message="Ratio")
-        #self.pp = Print(self.index, interval=2, message="Index")
+        #self.pp = Print(self.tMul, interval=.1, message="tMul")
         #self.tfon = TrigFunc(self.note["trigon"], function=self.noteon, arg=list(range(10)))
         #self.tfoff = TrigFunc(self.note["trigoff"], function=self.noteoff, arg=list(range(10)))
         
@@ -81,6 +83,11 @@ class Stop:
         
     def setTMul(self, x):
         self.tMul.value = x
+        print("tMul: ", self.tMul.value)
+
+    def setTTMul(self, x):
+        self.tTMul.value = x
+        print("tTTMul: ", self.tTMul.value)
 
     def setSumMul(self, x):
         self.sumMul.value = x
@@ -93,6 +100,7 @@ class Stop:
 
     def setInter(self, x):
         self.inter.value = x
+        print('inter', self.inter.value)
         
     def setEnvAtt(self, x):
         for i in range(len(self.envs)):
@@ -120,12 +128,14 @@ class Stop:
     def setPart(self, x):
         for i in range(len(self.part)):
             self.part[i].value = x[i]
+            print(self.part)
             
     def setTrans(self, x):
         self.trans.value = x
             
     def setRamp(self, x):
         self.ramp.value = x
+        print('ramp', self.ramp.value)
             
     def vel(self):
         return self.note['velocity']
@@ -135,9 +145,11 @@ class Stop:
         
     def setRatio(self, x):
         self.ratio.value = x
+        print("ratio", self.ratio.value)
         
     def setIndex(self, x):
         self.index.value = x
+        print("index", self.index.value)
         
     def setNoiseAtt(self, x):
         self.noiseEnv.setAttack(x)

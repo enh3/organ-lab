@@ -69,7 +69,7 @@ class MyFrame(wx.Frame):
             parent=self.panel,  # Use 'self.panel' as the parent for the slider
             minvalue=-60,
             maxvalue=18,
-            init=-27,
+            init=-25,
             pos=(0, 0),
             size=(200, 16),
             log=False,

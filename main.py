@@ -41,16 +41,31 @@ def automEnv(x):
 i = Sig(0)
 vol = Sig(0)
 
-s.amp = 0.27
+s.amp = 0.07
 
 #voixHumaine()
-cornet()
-glissContP.play()
+#cornet()
+#glissContP.play()
 
-#s.gui(locals())
+#stop1.setTMul(.7)
+#bourdon()
+#stopP = stop1.setPart([1, 0.01, 0.5, 0.01, 0.2, 0, 0.1, 0, 0.1, 0, 0.06, 0, 0.03, 0, 0.01, 0, 0.01, 0, 0.01, 0])
+#stop1.setNoiseAtt([3, 4, 2, 2.5, 3, .4, .5, .3])
+#stop1.setNoiseDec([3, 4, 2, 0.3, 0.6, .4, .5, .3])
+#stop1.setEnvAtt([6, 4, 2, 2.5, 3, .4, .5, .3])
+#stop1.setEnvDec([6, 4, 2, 0.3, 0.6, .4, .5, .3])
+#stopV = stop1.vel()
+#setRamp(100)
+#stop1.setInter(100)
+#call3 = CallAfter(stopInterPD, time=5)
+#setRamp(5)
+#cornet()
+#randMulP.play()
 
-app = wx.App()
-frame = MyFrame(None, -1, "MIDI Control Buttons", s, sp)
-frame.Show()
-app.MainLoop()
+s.gui(locals())
+
+#app = wx.App()
+#frame = MyFrame(None, -1, "MIDI Control Buttons", s, sp)
+#frame.Show()
+#app.MainLoop()
 

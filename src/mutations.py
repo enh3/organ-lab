@@ -22,15 +22,15 @@ glissC = [0 for i in range(8)]
 
 def glissUp():
     global glissC
+    #for i in range(len(glissC)):
+    #    glissC[i] == 0
+    #if glissC[0] < 600:
+    stop1.setTrans(glissC)
     for i in range(len(glissC)):
-        glissC[i] == 0
-    if glissC[0] < 600:
-        stop1.setTrans(glissC)
-        for i in range(len(glissC)):
-            glissC[i] = glissC[i] + 2
-    else:
-        for i in range(len(glissC)):
-            glissC[i] = 0
+        glissC[i] = glissC[i] + 2
+    #else:
+    #    for i in range(len(glissC)):
+    #        glissC[i] = 0
 
 glissUpC = None
 def glissUp2():
@@ -137,7 +137,7 @@ def stopInter():
     global stopInterPRand
     x = randint(0, 3)
     stopInterPRand.value = randint(1, 10)
-    stop1.setRamp(stopInterPRand)
+    stop1.setRamp(stopInterPRand.value)
     print(x)
     if x == 0:
         bourdon()
