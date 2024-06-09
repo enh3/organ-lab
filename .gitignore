@@ -7,6 +7,7 @@
 .mutations.py.swp
 .pyo_server.py.swp
 .stop.py.swp
+src/stop.log
 .gitignore.swp
 .main.py.swp
 .nav.py.swp

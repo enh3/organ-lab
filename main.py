@@ -11,12 +11,6 @@ from src.stop import Stop
 from src.audio_objects import stop1
 stop1.out()
 
-partList = list(range(1, 8, 1))
-transList = list(range(1, 8, 1))
-openSumT = 36
-closedSumT = 38
-openSumR = 0.125
-closedSumR = 0.25
 ip_addr = get_local_ip()
 
 #from random import random
@@ -45,6 +39,8 @@ s.amp = 0.07
 
 #voixHumaine()
 #cornet()
+principal()
+glissUpP.play()
 #glissContP.play()
 
 #stop1.setTMul(.7)

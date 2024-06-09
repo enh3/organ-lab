@@ -63,8 +63,8 @@ def glissCont():
     else:
         for i in range(len(glissC)):
             glissC[i] = 0
-    print("0", glissC[0])
-    print("1", glissC[1])
+    #print(glissC)
+    #print("1", glissC[1])
             
 def transReset():
     global glissC
