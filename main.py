@@ -35,12 +35,12 @@ def automEnv(x):
 i = Sig(0)
 vol = Sig(0)
 
-s.amp = 0.07
+s.amp = 0.065
 
 #voixHumaine()
 #cornet()
-principal()
-glissUpP.play()
+#principal()
+#glissUpP.play()
 #glissContP.play()
 
 #stop1.setTMul(.7)

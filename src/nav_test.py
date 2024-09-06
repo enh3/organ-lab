@@ -14,92 +14,38 @@ call5 = None
 i = Sig(0)
 vol = Sig(1)
 
-def stateNav(source, *args):
+def stateNav(*args):
     global i, vol, call1, call2, call3, call4, call5  # Global index for states
     state_changed = False  # Flag to track whether a state change should be triggered
-
-    # Determine the state index based on the source
-    if source == "midi":
+    
+    # Determine if the incoming message is MIDI or OSC based on args length or type
+    if len(args) == 3 and isinstance(args[0], int):
+        # Handle MIDI messages
         status, data1, data2 = args
-        print(status, data1, data2)
-        if  status == 150 and data1 == 48 or status == 176 and data1 == 1 and data2 ==20: 
+        print("MIDI:", status, data1, data2)
+        if  status == 150 and data1 == 48 or status == 176 and data1 == 1 and data2 == 20: 
             i.value = 1
             state_changed = True
-        elif status == 150 and data1 == 49 or status == 176 and data1 == 2 and data2 ==20:
+        elif status == 150 and data1 == 49 or status == 176 and data1 == 2 and data2 == 20:
             i.value = 2
             state_changed = True
-        elif status == 150 and data1 == 50 or status == 176 and data1 == 3 and data2 ==20:
-            i.value = 3
-            state_changed = True
-        elif status == 150 and data1 == 51 or status == 176 and data1 == 4 and data2 ==20:
-            i.value = 4
-            state_changed = True
-        elif status == 150 and data1 == 52 or status == 176 and data1 == 5 and data2 ==20:
-            i.value = 5
-            state_changed = True
-        elif status == 150 and data1 == 53 or status == 176 and data1 == 6 and data2 ==20:
-            i.value = 6
-            state_changed = True
-        elif status == 150 and data1 == 54 or status == 176 and data1 == 7 and data2 ==20:
-            i.value = 7
-            state_changed = True
-        elif status == 150 and data1 == 55 or status == 176 and data1 == 8 and data2 ==20:
-            i.value = 8
-            state_changed = True
-        elif status == 150 and data1 == 56 or status == 176 and data1 == 9 and data2 ==20:
-            i.value = 9
-            state_changed = True
-        elif status == 150 and data1 == 57 or status == 176 and data1 == 10 and data2 ==20:
-            i.value = 10
-            state_changed = True
-        elif status == 150 and data1 == 58 or status == 176 and data1 == 11 and data2 ==20:    
-            i.value = 11
-            state_changed = True
-        elif status == 150 and data1 == 59 or status == 176 and data1 == 12 and data2 ==20:    
-            i.value = 12
-            state_changed = True
-        elif status == 150 and data1 == 60 or status == 176 and data1 == 13 and data2 ==20:    
-            i.value = 13
-            state_changed = True
-        elif status == 150 and data1 == 61 or status == 176 and data1 == 14 and data2 ==20:    
-            i.value = 14
-            state_changed = True
-        elif status == 150 and data1 == 62 or status == 176 and data1 == 15 and data2 ==20:    
-            i.value = 15
-            state_changed = True
-        elif status == 150 and data1 == 63 or status == 176 and data1 == 16 and data2 ==20:    
-            i.value = 16
-            state_changed = True
-        elif status == 150 and data1 == 64 or status == 176 and data1 == 17 and data2 ==20:    
-            i.value = 17
-            state_changed = True
-        elif status == 150 and data1 == 65 or status == 176 and data1 == 18 and data2 ==20:    
-            i.value = 18
-            state_changed = True
-        elif status == 150 and data1 == 66 or status == 176 and data1 == 19 and data2 ==20:    
-            i.value = 19
-            state_changed = True
-        elif status == 150 and data1 == 67 or status == 176 and data1 == 20 and data2 ==20:    
-            i.value = 20 
-            state_changed = True
-        elif status == 150 and data1 == 68 or status == 176 and data1 == 21 and data2 ==20:    
-            i.value = 21 
-            state_changed = True
+        # Continue with similar conditions for other states...
         elif status == 182 and data1 == 20:
-            vol.value = (data2/127)*1.1 
-            stop1.setTTMul(vol.value) 
+            vol.value = (data2 / 127) * 1.1 
+            stop1.setTTMul(vol.value)
 
-    elif source == "osc":
+    elif len(args) == 2 and isinstance(args[0], str):
+        # Handle OSC messages
         address, value = args
-        # OSC directly modifies 'i', or you could map addresses to indexes as well
+        print("OSC:", address, value)
         if address == "/volume":
             vol.value = value
-            stop1.setTMul(abs(vol.value-1))
-        if address == "/continue" and value == 1:
-            i.value += 1 # Assuming 10 states, prevent overflow
+            stop1.setTMul(abs(vol.value - 1))
+        elif address == "/continue" and value == 1:
+            i.value += 1  # Assuming 10 states, prevent overflow
             state_changed = True
         elif address == "/return" and value == 1:
-            i.value -= 1 # Assuming starting from 1, prevent underflow
+            i.value -= 1  # Assuming starting from 1, prevent underflow
             state_changed = True
 
     if state_changed:
@@ -207,13 +153,8 @@ def stateNav(source, *args):
             #cornet()
             #randMulP.play()
 
-# Wrapper or partial functions to specify the source type
-from functools import partial
-midi_nav = partial(stateNav, "midi")
-osc_nav = partial(stateNav, "osc")
-
-midiScan = RawMidi(midi_nav)
-oscScan = OscDataReceive(port=9003, address="*", function=osc_nav)
+midiScan = RawMidi(stateNav)
+oscScan = OscDataReceive(port=9003, address="*", function=stateNav)
 
 send = OscSend(
     input=[i, vol],

@@ -9,9 +9,9 @@ class Stop:
     def __init__(self, tMul, mMul, sumMul, noiseMul, part, partScRat, mul, att, dec, sus, rel, noiseAtt, noiseDec, noiseSus, noiseRel, noiseFiltQ, rand, trans, ramp, fmMul, ratio, index, inter, sumTrans, sumRat, sumInd, tTMul):
         global sp
         # scale=1 to get pitch values in hertz
-        #self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=1)
-        self.note = Notein(poly=10, scale=1, first=0, last=127)
-        self.note.keyboard()
+        self.note = NoteinSustain(poly=10, scale=1, first=0, last=127, channel=1)
+        #self.note = Notein(poly=10, scale=1, first=0, last=127)
+        #self.note.keyboard()
         self.partScRat = Sig(partScRat)
         self.ramp = Sig(ramp)
         self.inter = Sig(inter)
@@ -66,14 +66,14 @@ class Stop:
             self.trans.append(SigTo(trans[i], time=0.025))
             self.part.append(SigTo(part[i], time=0.2))
             self.snds.append(Sine(freq=(self.part[i]**self.partSc) * (MToF(FToM(self.note['pitch'])-.15)) + Randi(-rand, rand, 5) + self.trans[-1] + self.mod, mul=self.envs[-1]))
-            self.sum = SumOsc(freq=(MToF(FToM(self.note['pitch'])-0.15+self.sumTrans) + self.trans[-1]), ratio=self.sumRat, index=self.sumInd, mul=self.noiseEnv*self.sumMul)
+            self.sum = SumOsc(freq=(MToF(FToM(self.note['pitch'])-0.+self.sumTrans) + self.trans[-1]), ratio=self.sumRat, index=self.sumInd, mul=self.noiseEnv*self.sumMul)
             self.mixed.append(self.snds[-1].mix())
         self.mix = Mix(self.mixed, 2, mul=mMul)
         self.filt = ButLP(self.mix + self.nMix + self.sum + self.windF, 5000)
         self.comp = Compress(self.filt, thresh=-15, ratio=6, mul=self.tMul*self.tTMul)
         self.rev = STRev(self.comp, inpos=0.5, revtime=10, cutoff=4000, bal=0.15, mul=self.tMul).mix(2)
         sp = Spectrum(self.rev.mix(1), size=8192)
-        self.p = Print(self.trans, interval=2, message="Trans")
+        #self.p = Print(self.trans, interval=2, message="Trans")
         #self.pp = Print(self.tMul, interval=.1, message="tMul")
         #self.tfon = TrigFunc(self.note["trigon"], function=self.noteon, arg=list(range(10)))
         #self.tfoff = TrigFunc(self.note["trigoff"], function=self.noteoff, arg=list(range(10)))
@@ -134,7 +134,7 @@ class Stop:
     def setTrans(self, x):
         for i in range(len(self.trans)):
             self.trans[i].value = x[i]
-            print(self.trans[i].value)
+            #print(self.trans[i].value)
             
     def setRamp(self, x):
         self.ramp.value = x
