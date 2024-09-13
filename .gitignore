@@ -11,5 +11,5 @@
 .main.py.swp
 .nav.py.swp
 .ctl_gui.py.swp
-main.log
+*.log
 __pycache__

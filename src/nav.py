@@ -106,7 +106,7 @@ def stateNav(source, *args):
         if i.value == 3:
             print('1e Élégie - Qui, si je criais, qui donc entendrait mon cri \nGlissandi (midi)')
             glissUpP.play()
-            stop1.setTMul(0.85)
+            stop1.setTMul(0.55)
         #2e Élégie
         elif i.value == 4:
             print('2e Élégie - Toute Ange est terrible\nEnveloppe dynamique')
@@ -117,13 +117,15 @@ def stateNav(source, *args):
         #3e Élégie
         elif i.value == 6:
             print('3e Élégie - Interpolation de cloche')
+            voixHumaine()
             glissUpP.stop()
             transReset()
             voixHumaine()
-            stop1.setTMul(1)
+            stop1.setTMul(0.7)
             stop1.setRatio(0)
             stop1.setIndex(1)
             stopInterP.stop()
+            voixHumaine()
             call2 = CallAfter(stop1.setRamp, time=2, arg=(240))
             call3 = CallAfter(bellMul, time=1)
             call4 = CallAfter(bellFM, time=1)
@@ -136,7 +138,7 @@ def stateNav(source, *args):
         #5e Élégie
         elif i.value == 11:
             print('5e Élégie - Mais les errants!')
-            stop1.setTMul(.7)
+            stop1.setTMul(.3)
             stop1.setInter(0)
             glissUpP.stop()
             transReset()
