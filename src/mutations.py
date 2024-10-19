@@ -136,7 +136,7 @@ stopInterPRand = Sig(1)
 def stopInter():
     global stopInterPRand
     x = randint(0, 3)
-    stopInterPRand.value = randint(1, 10)
+    stopInterPRand.value = randint(4, 8)
     stop1.setRamp(stopInterPRand.value)
     print(x)
     if x == 0:

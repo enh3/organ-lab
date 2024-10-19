@@ -21,7 +21,7 @@ def stateNav(source, *args):
     # Determine the state index based on the source
     if source == "midi":
         status, data1, data2 = args
-        print(status, data1, data2)
+        ##print(status, data1, data2)
         if  status == 150 and data1 == 48 or status == 176 and data1 == 1 and data2 ==20: 
             i.value = 1
             state_changed = True
@@ -101,49 +101,35 @@ def stateNav(source, *args):
         elif address == "/return" and value == 1:
             i.value -= 1 # Assuming starting from 1, prevent underflow
             state_changed = True
+        print('i = ', i.value)
 
     if state_changed:
-        if i.value == 1:
-            stop1.setInter(0)
-            glissUpP.stop()
-            transReset()
-            stop1.setRatio(0)
-            stop1.setIndex(1)
-            bourdon()
         #1e Élégie
-        if i.value == 3:
-            print('1e Élégie - Qui, si je criais, qui donc entendrait mon cri \nGlissandi (midi)')
-            glissUpP.play()
-            stop1.setTMul(0.85)
-        #2e Élégie
-        elif i.value == 4:
-            print('2e Élégie - Toute Ange est terrible\nEnveloppe dynamique')
-            glissUpP.stop()
+        if i.value == 1:
+            print('Reset')
+            stop1.setInter(0)
+            bourdon()
             transReset()
-            stop1.setTMul(0.55)
-            dynEnv()
-        #3e Élégie
-        elif i.value == 6:
-            print('3e Élégie - Interpolation de cloche')
-            glissUpP.stop()
-            transReset()
-            voixHumaine()
-            stop1.setTMul(0.7)
             stop1.setRatio(0)
             stop1.setIndex(1)
             stopInterP.stop()
-            call2 = CallAfter(stop1.setRamp, time=2, arg=(20))
-            call3 = CallAfter(bellMul, time=1)
-            call4 = CallAfter(bellFM, time=1)
-            call5 = CallAfter(bellEnv, time=20)
-        #4e Élégie
-        elif i.value == 7:
-            print('4e Élégie - Verres musicaux')
-            stop1.setInter(40)
-            stop1.setTMul(0)
+            glissUpP.stop()
+            stop1.setTMul(0.85)
+            bourdon()
+        #1e Élégie
+        if i.value == 2:
+            print('Gliss')
+            bourdon()
+            transReset()
+            stop1.setRatio(0)
+            stop1.setIndex(1)
+            stopInterP.stop()
+            glissUpP.play()
+            stop1.setTMul(0.85)
         #5e Élégie
-        elif i.value == 11:
-            print('5e Élégie - Mais les errants!')
+        elif i.value == 3:
+            print('Interpolation')
+            glissUpP.stop()
             stop1.setTMul(.7)
             stop1.setInter(0)
             glissUpP.stop()
@@ -155,6 +141,35 @@ def stateNav(source, *args):
             #setRamp(100)
             #stop1.setInter(100)
             call3 = CallAfter(stopInterPD, time=5)
+        #3e Élégie
+        elif i.value == 4:
+            print('Bell')
+            glissUpP.stop()
+            stop1.setInter(0)
+            stop1.setRamp(0)
+            stopInterPD.stop()
+            transReset()
+            voixHumaine()
+            stop1.setTMul(0.7)
+            stop1.setRatio(0)
+            stop1.setIndex(1)
+            stopInterPD.stop()
+            call2 = CallAfter(stop1.setRamp, time=2, arg=(20))
+            call3 = CallAfter(bellMul, time=1)
+            call4 = CallAfter(bellFM, time=1)
+            call5 = CallAfter(bellEnv, time=20)
+        #4e Élégie
+        elif i.value == 7:
+            print('4e Élégie - Verres musicaux')
+            stop1.setInter(40)
+            stop1.setTMul(0)
+        #2e Élégie
+        elif i.value == 12:
+            print('2e Élégie - Toute Ange est terrible\nEnveloppe dynamique')
+            glissUpP.stop()
+            transReset()
+            stop1.setTMul(0.55)
+            dynEnv()
         elif i.value == 12:
             print('5e Élégie - Mais les errants!')
             stop1.setTMul(.7)
