@@ -16,6 +16,10 @@ babP = Pattern(function=bourdonAndBell, time=0.2, arg=0.2)
 tr = TrigFunc(trigDiss, function=dissocie, arg=stop1.vel())
 glissContP = Pattern(function=glissCont, time=0.01)
 stopInterP = Pattern(function=stopInter, time=Sig(stopInterPRand))
+stopInter2P = Pattern(function=stopInter2, time=Sig(stopInterPRand))
 
 def stopInterPD(): 
     stopInterP.play()
+
+def stopInterPD2(): 
+    stopInter2P.play()

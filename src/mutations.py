@@ -149,6 +149,26 @@ def stopInter():
         cornet()
     print('stopInter', stopInterPRand)
 
+counter = 0
+
+def stopInter2():
+    global stopInterPRand, counter
+    stopInterPRand.value = randint(4, 8)
+    stop1.setRamp(stopInterPRand.value)
+    if counter == 0:
+        bourdon()
+        counter += 1
+    elif counter == 1:
+        principal()
+        counter += 1
+    elif counter == 2:
+        voixHumaine()
+        counter += 1
+    elif counter == 3:
+        cornet()
+        counter = 0
+    print('stopInter', stopInterPRand)
+
 def dynEnv():
     print('Enveloppe dynamique')
     stop1.setPart([1, 2, 3, 4, 4, 4, 0, 0])

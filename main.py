@@ -35,7 +35,7 @@ def automEnv(x):
 i = Sig(0)
 vol = Sig(0)
 
-s.amp = 0.065
+s.amp = 0.12
 
 #voixHumaine()
 #cornet()

@@ -114,7 +114,7 @@ def stateNav(source, *args):
             stop1.setIndex(1)
             stopInterP.stop()
             glissUpP.stop()
-            stop1.setTMul(0.85)
+            stop1.setTMul(.4)
             bourdon()
         #1e Élégie
         if i.value == 2:
@@ -125,7 +125,7 @@ def stateNav(source, *args):
             stop1.setIndex(1)
             stopInterP.stop()
             glissUpP.play()
-            stop1.setTMul(0.85)
+            stop1.setTMul(.7)
         #5e Élégie
         elif i.value == 3:
             print('Interpolation')
@@ -140,20 +140,19 @@ def stateNav(source, *args):
             stop1.setEnvAtt([2.285, 2.450, 0.327, 0.338, 0.385, 0.277, 0, 0])
             #setRamp(100)
             #stop1.setInter(100)
-            call3 = CallAfter(stopInterPD, time=5)
+            call3 = CallAfter(stopInterPD2, time=5)
         #3e Élégie
         elif i.value == 4:
             print('Bell')
+            voixHumaine()
             glissUpP.stop()
-            stop1.setInter(0)
-            stop1.setRamp(0)
-            stopInterPD.stop()
             transReset()
             voixHumaine()
-            stop1.setTMul(0.7)
+            stop1.setTMul(.8)
             stop1.setRatio(0)
             stop1.setIndex(1)
-            stopInterPD.stop()
+            stopInter2P.stop()
+            voixHumaine()
             call2 = CallAfter(stop1.setRamp, time=2, arg=(20))
             call3 = CallAfter(bellMul, time=1)
             call4 = CallAfter(bellFM, time=1)
